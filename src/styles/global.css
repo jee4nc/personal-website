@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: #0c0f18;
+  --color-bg2: #111520;
+  --color-bg3: #161b2c;
+  --color-surface: #1a2035;
+  --color-border: rgba(0, 210, 255, 0.12);
+  --color-cyan: #00d4ff;
+  --color-cyan-dim: rgba(0, 212, 255, 0.15);
+  --color-cyan-glow: rgba(0, 212, 255, 0.06);
+  --color-violet: #7c5cfc;
+  --color-text: #e2e8f0;
+  --color-muted: #64748b;
+
+  --font-mono: 'Space Mono', monospace;
+  --font-sans: 'Syne', sans-serif;
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Noise grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}

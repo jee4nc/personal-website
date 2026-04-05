@@ -1,0 +1,109 @@
+---
+interface Tab {
+  label: string;
+  lines: string[];
+}
+
+interface Props {
+  tabs: Tab[];
+}
+
+const { tabs } = Astro.props;
+---
+
+<div class="install-tabs">
+  <div class="tab-bar">
+    {tabs.map((tab, i) => (
+      <button
+        class:list={['tab-btn', { active: i === 0 }]}
+        data-tab={i}
+      >
+        {tab.label}
+      </button>
+    ))}
+  </div>
+  {tabs.map((tab, i) => (
+    <div class:list={['tab-panel', { hidden: i !== 0 }]} data-panel={i}>
+      {tab.lines.map((line) => (
+        <div class="install-line">
+          {line.startsWith('#') ? (
+            <span class="install-comment">{line}</span>
+          ) : (
+            <>
+              <span class="install-prompt">$</span>
+              <span class="install-cmd">{line}</span>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  ))}
+</div>
+
+<script>
+  document.querySelectorAll('.install-tabs').forEach((tabs) => {
+    const buttons = tabs.querySelectorAll<HTMLButtonElement>('.tab-btn');
+    const panels = tabs.querySelectorAll<HTMLDivElement>('.tab-panel');
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = btn.dataset.tab;
+        buttons.forEach((b) => b.classList.remove('active'));
+        panels.forEach((p) => p.classList.add('hidden'));
+        btn.classList.add('active');
+        tabs.querySelector(`.tab-panel[data-panel="${idx}"]`)?.classList.remove('hidden');
+      });
+    });
+  });
+</script>
+
+<style>
+  .install-tabs {
+    border: 1px solid var(--color-border);
+    margin-bottom: 24px;
+  }
+  .tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .tab-btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    color: var(--color-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    letter-spacing: 0.04em;
+  }
+  .tab-btn:hover {
+    color: var(--color-text);
+  }
+  .tab-btn.active {
+    color: var(--color-cyan);
+    border-bottom-color: var(--color-cyan);
+  }
+  .tab-panel {
+    padding: 20px 24px;
+    background: var(--color-bg2);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.8;
+    border-left: 2px solid var(--color-cyan);
+  }
+  .tab-panel.hidden {
+    display: none;
+  }
+  .install-prompt {
+    color: var(--color-cyan);
+    margin-right: 8px;
+  }
+  .install-cmd {
+    color: var(--color-text);
+  }
+  .install-comment {
+    color: var(--color-muted);
+  }
+</style>

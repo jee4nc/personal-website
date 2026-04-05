@@ -1,0 +1,219 @@
+---
+interface Props {
+  title?: string;
+  commands: string[];
+}
+
+const { title = 'terminal', commands } = Astro.props;
+const id = `term-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<div class="terminal">
+  <div class="terminal-bar">
+    <div class="terminal-dots">
+      <span class="dot dot-red"></span>
+      <span class="dot dot-yellow"></span>
+      <span class="dot dot-green"></span>
+    </div>
+    <span class="terminal-title">{title}</span>
+  </div>
+  <div class="terminal-body" id={id} data-commands={JSON.stringify(commands)}>
+    <span class="prompt">$</span>
+    <span class="cursor">█</span>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLDivElement>('.terminal-body[data-commands]').forEach((el) => {
+    const commands: string[] = JSON.parse(el.dataset.commands || '[]');
+    let cmdIndex = 0;
+    let charIndex = 0;
+    let typing = true;
+    let pauseAfter = false;
+
+    function getElements() {
+      return {
+        prompt: el.querySelector('.prompt') as HTMLSpanElement,
+        cursor: el.querySelector('.cursor') as HTMLSpanElement,
+      };
+    }
+
+    function createLine(text: string, isOutput = false) {
+      const line = document.createElement('div');
+      line.className = isOutput ? 'output-line' : 'cmd-line';
+      line.textContent = text;
+      return line;
+    }
+
+    function typeNext() {
+      if (cmdIndex >= commands.length) {
+        // Restart after pause
+        setTimeout(() => {
+          // Clear all lines except prompt and cursor
+          const lines = el.querySelectorAll('.cmd-line, .output-line');
+          lines.forEach((l) => l.remove());
+          const typed = el.querySelector('.typed');
+          if (typed) typed.textContent = '';
+          cmdIndex = 0;
+          charIndex = 0;
+          typing = true;
+          typeNext();
+        }, 4000);
+        return;
+      }
+
+      const cmd = commands[cmdIndex];
+
+      if (cmd.startsWith('# ')) {
+        // Output line — show immediately
+        const { prompt, cursor } = getElements();
+        const line = createLine(cmd.slice(2), true);
+        el.insertBefore(line, prompt.parentElement === el ? prompt : null);
+        // Move prompt + cursor after
+        el.appendChild(prompt);
+        let typed = el.querySelector('.typed') as HTMLSpanElement;
+        if (typed) el.appendChild(typed);
+        el.appendChild(cursor);
+        cmdIndex++;
+        setTimeout(typeNext, 300);
+        return;
+      }
+
+      // Typing a command
+      let typed = el.querySelector('.typed') as HTMLSpanElement;
+      if (!typed) {
+        typed = document.createElement('span');
+        typed.className = 'typed';
+        const { cursor } = getElements();
+        el.insertBefore(typed, cursor);
+      }
+
+      if (charIndex < cmd.length) {
+        typed.textContent = cmd.slice(0, charIndex + 1);
+        charIndex++;
+        const speed = 40 + Math.random() * 40;
+        setTimeout(typeNext, speed);
+      } else {
+        // Done typing this command — "execute" it
+        setTimeout(() => {
+          const { prompt, cursor } = getElements();
+          // Move completed command to a line
+          const line = createLine(`$ ${cmd}`);
+          el.insertBefore(line, prompt);
+          typed.textContent = '';
+          charIndex = 0;
+          cmdIndex++;
+          setTimeout(typeNext, 200);
+        }, 800);
+      }
+    }
+
+    // Pre-calculate final height to prevent layout shift during animation
+    function preCalculateHeight() {
+      // Temporarily render all content to measure final height
+      const fragment = document.createDocumentFragment();
+      for (const cmd of commands) {
+        const line = document.createElement('div');
+        if (cmd.startsWith('# ')) {
+          line.className = 'output-line';
+          line.textContent = cmd.slice(2);
+        } else {
+          line.className = 'cmd-line';
+          line.textContent = `$ ${cmd}`;
+        }
+        fragment.appendChild(line);
+      }
+      // Add final prompt line
+      const promptLine = document.createElement('div');
+      promptLine.innerHTML = '<span class="prompt">$</span><span class="cursor">█</span>';
+      fragment.appendChild(promptLine);
+
+      // Measure with content rendered but invisible
+      el.style.visibility = 'hidden';
+      el.appendChild(fragment);
+      const finalHeight = el.scrollHeight;
+      // Clean up measurement content (keep original prompt + cursor)
+      el.querySelectorAll('.cmd-line, .output-line').forEach((l) => l.remove());
+      promptLine.remove();
+      el.style.visibility = '';
+      el.style.minHeight = `${finalHeight}px`;
+    }
+
+    preCalculateHeight();
+
+    // Start after element is visible
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          observer.disconnect();
+          setTimeout(typeNext, 600);
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+  });
+</script>
+
+<style>
+  .terminal {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--color-bg2);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .terminal-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .dot-red { background: #ff5f57; }
+  .dot-yellow { background: #febc2e; }
+  .dot-green { background: #28c840; }
+  .terminal-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-muted);
+  }
+  .terminal-body {
+    padding: 20px 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--color-text);
+  }
+  .terminal-body .prompt {
+    color: var(--color-cyan);
+    margin-right: 8px;
+  }
+  .terminal-body .typed {
+    color: var(--color-text);
+  }
+  .terminal-body .cursor {
+    color: var(--color-cyan);
+    animation: blink 1s step-end infinite;
+  }
+  .terminal-body :global(.cmd-line) {
+    color: var(--color-muted);
+  }
+  .terminal-body :global(.output-line) {
+    color: var(--color-muted);
+    font-size: 12px;
+    opacity: 0.7;
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+</style>

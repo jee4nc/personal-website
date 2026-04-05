@@ -1,0 +1,15 @@
+<div id="cursor-dot" class="pointer-events-none fixed z-[9999] h-1.5 w-1.5 rounded-full bg-cyan shadow-[0_0_12px_var(--color-cyan)]"></div>
+
+<script>
+  const dot = document.getElementById('cursor-dot')!;
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  if (isTouchDevice) {
+    dot.style.display = 'none';
+  } else {
+    document.addEventListener('mousemove', (e) => {
+      dot.style.left = `${e.clientX - 3}px`;
+      dot.style.top = `${e.clientY - 3}px`;
+    });
+  }
+</script>

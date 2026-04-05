@@ -1,0 +1,197 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('es-CL', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+---
+
+<Base
+  title={post.data.title}
+  description={post.data.description}
+  ogType="article"
+  publishedDate={post.data.date}
+  tags={post.data.tags}
+>
+  <article class="mx-auto max-w-[720px] px-8 pb-24 pt-20">
+
+    <!-- Header -->
+    <a href="/blog" class="back-link">← volver al blog</a>
+
+    <div class="post-meta">
+      <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+      <span class="sep">·</span>
+      {post.data.tags.map((tag) => (
+        <span class="meta-tag">{tag}</span>
+      ))}
+    </div>
+
+    <h1 class="post-title">{post.data.title}</h1>
+    <p class="post-desc">{post.data.description}</p>
+
+    <div class="divider"></div>
+
+    <!-- Content -->
+    <div class="prose">
+      <Content />
+    </div>
+
+  </article>
+</Base>
+
+<style>
+  .back-link {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-muted);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    margin-bottom: 40px;
+    transition: color 0.2s;
+  }
+  .back-link:hover {
+    color: var(--color-cyan);
+  }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-muted);
+    margin-bottom: 16px;
+    letter-spacing: 0.04em;
+  }
+  .sep {
+    color: var(--color-border);
+  }
+  .meta-tag {
+    color: var(--color-cyan);
+    background: var(--color-cyan-dim);
+    padding: 1px 8px;
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    font-size: 10px;
+  }
+
+  .post-title {
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+
+  .post-desc {
+    font-size: 17px;
+    color: var(--color-muted);
+    line-height: 1.6;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: 40px 0;
+  }
+
+  /* ── Prose (MDX content) ── */
+  .prose {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #cbd5e1;
+  }
+  .prose :global(h2) {
+    font-size: 24px;
+    font-weight: 700;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+    color: var(--color-text);
+  }
+  .prose :global(h3) {
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 36px;
+    margin-bottom: 12px;
+    color: var(--color-text);
+  }
+  .prose :global(p) {
+    margin-bottom: 20px;
+  }
+  .prose :global(a) {
+    color: var(--color-cyan);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s;
+  }
+  .prose :global(a:hover) {
+    color: #5ce6ff;
+  }
+  .prose :global(strong) {
+    color: var(--color-text);
+    font-weight: 700;
+  }
+  .prose :global(ul),
+  .prose :global(ol) {
+    margin-bottom: 20px;
+    padding-left: 24px;
+  }
+  .prose :global(li) {
+    margin-bottom: 8px;
+  }
+  .prose :global(li::marker) {
+    color: var(--color-violet);
+  }
+  .prose :global(code:not(pre code)) {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background: var(--color-surface);
+    color: var(--color-cyan);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--color-border);
+  }
+  .prose :global(pre) {
+    background: var(--color-bg2) !important;
+    border: 1px solid var(--color-border);
+    border-left: 2px solid var(--color-cyan);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .prose :global(pre code) {
+    font-family: var(--font-mono);
+  }
+  .prose :global(blockquote) {
+    border-left: 2px solid var(--color-violet);
+    padding-left: 20px;
+    margin-bottom: 20px;
+    color: var(--color-muted);
+    font-style: italic;
+  }
+  .prose :global(hr) {
+    border: none;
+    height: 1px;
+    background: var(--color-border);
+    margin: 40px 0;
+  }
+</style>

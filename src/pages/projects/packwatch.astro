@@ -1,0 +1,157 @@
+---
+import Docs from '../../layouts/Docs.astro';
+import Terminal from '../../components/docs/Terminal.astro';
+import InstallTabs from '../../components/docs/InstallTabs.astro';
+import FlagsTable from '../../components/docs/FlagsTable.astro';
+
+const sidebar = [
+  {
+    title: 'Inicio',
+    links: [
+      { label: 'Introducción', href: '#que-hace' },
+      { label: 'Instalación', href: '#instalacion' },
+      { label: 'Quickstart', href: '#quickstart' },
+    ],
+  },
+  {
+    title: 'Referencia',
+    links: [
+      { label: 'Flags y opciones', href: '#flags' },
+      { label: 'JSON mode', href: '#json' },
+      { label: 'Node awareness', href: '#node-awareness' },
+    ],
+  },
+  {
+    title: 'Guías',
+    links: [
+      { label: 'Build from source', href: '#build' },
+    ],
+  },
+];
+
+const toc = [
+  { label: '¿Qué hace?', href: '#que-hace' },
+  { label: 'Instalación', href: '#instalacion' },
+  { label: 'Primer uso', href: '#quickstart' },
+  { label: 'Flags', href: '#flags' },
+  { label: 'Node awareness', href: '#node-awareness' },
+];
+
+const installTabs = [
+  {
+    label: 'macOS',
+    lines: ['# via Homebrew', 'brew tap jee4nc/tap', 'brew install packwatch'],
+  },
+  {
+    label: 'Linux',
+    lines: ['# via Homebrew', 'brew tap jee4nc/tap', 'brew install packwatch', '# o .deb', 'sudo dpkg -i packwatch_*.deb'],
+  },
+  {
+    label: 'Windows',
+    lines: ['# via Scoop', 'scoop bucket add packwatch https://github.com/jee4nc/scoop-bucket', 'scoop install packwatch'],
+  },
+];
+
+const flags = [
+  { flag: '--prod-only', type: 'bool', description: 'Solo revisa dependencias de producción' },
+  { flag: '--dev-only', type: 'bool', description: 'Solo revisa dependencias de desarrollo' },
+  { flag: '--json', type: 'bool', description: 'Output en formato JSON (sin TUI interactivo)' },
+  { flag: '--no-color', type: 'bool', description: 'Desactiva colores en el output' },
+  { flag: '--version, -v', type: '—', description: 'Muestra la versión instalada' },
+  { flag: '--help, -h', type: '—', description: 'Muestra la ayuda' },
+];
+
+const terminalCommands = [
+  'packwatch',
+  '# packwatch v1.0.0',
+  '# Node 20.11.0 from .nvmrc',
+  '# Lockfile v3 — 42 direct deps',
+  '# Checking npm registry...',
+  '# 5 updates · 2 vulnerable',
+];
+---
+
+<Docs
+  title="packwatch"
+  description="TUI interactivo para gestionar actualizaciones de dependencias npm. Detecta vulnerabilidades, respeta tu versión de Node, y te deja elegir qué actualizar."
+  lang="Go"
+  type="TUI"
+  version="v1.0.0"
+  sidebar={sidebar}
+  toc={toc}
+>
+  <h2 id="que-hace">¿Qué hace packwatch?</h2>
+  <p>
+    Lee tu <code>package-lock.json</code>, consulta el npm registry de forma concurrente, detecta vulnerabilidades via GitHub Advisory Database, y presenta un TUI interactivo para elegir qué actualizar.
+  </p>
+  <ul>
+    <li>Detecta tu versión de Node (<code>.nvmrc</code> → <code>.node-version</code> → <code>node --version</code>)</li>
+    <li>Lee <code>.npmrc</code> para registries custom y tokens</li>
+    <li>Parsea <code>package-lock.json</code> v1/v2/v3 y <code>package.json</code></li>
+    <li>Fetch concurrente al registry para versiones nuevas</li>
+    <li>Revisa advisories de seguridad (GitHub Advisory Database)</li>
+    <li>TUI interactivo para seleccionar paquetes a actualizar</li>
+    <li>Genera y ejecuta <code>npm install</code> separando prod/dev</li>
+  </ul>
+
+  <Terminal title="terminal — packwatch demo" commands={terminalCommands} />
+
+  <h2 id="instalacion">Instalación</h2>
+  <InstallTabs tabs={installTabs} />
+
+  <h2 id="quickstart">Primer uso</h2>
+  <p>Dentro de cualquier proyecto Node.js con <code>package-lock.json</code>:</p>
+
+  <Terminal
+    title="terminal — quickstart"
+    commands={[
+      'packwatch',
+      '# Solo producción',
+      'packwatch --prod-only',
+      '# Solo dev',
+      'packwatch --dev-only',
+    ]}
+  />
+
+  <h2 id="flags">Flags disponibles</h2>
+  <FlagsTable flags={flags} />
+
+  <h2 id="node-awareness">Node version awareness</h2>
+  <p>
+    Cuando la última versión de un paquete requiere un Node más nuevo del que tienes activo, packwatch no la sugiere. En vez de eso, recorre versiones de la más nueva a la más antigua y sugiere la mejor compatible con tu Node:
+  </p>
+
+  <Terminal
+    title="terminal — node awareness"
+    commands={[
+      'packwatch',
+      '# next 14.2.3 → 15.1.0',
+      '# latest requires Node >=18.18.0',
+      '# suggesting 14.2.28 instead',
+    ]}
+  />
+
+  <h2 id="json">JSON mode</h2>
+  <p>
+    Usa <code>--json</code> para CI pipelines o scripting:
+  </p>
+
+  <Terminal
+    title="terminal — json mode"
+    commands={[
+      'packwatch --json | jq ".packages[]"',
+      '# Filter vulnerable packages',
+      'packwatch --json | jq ".packages[] | select(.vulnCount > 0)"',
+    ]}
+  />
+
+  <h2 id="build">Build from source</h2>
+  <Terminal
+    title="terminal — build"
+    commands={[
+      'make build',
+      'make test',
+      'make lint',
+    ]}
+  />
+</Docs>

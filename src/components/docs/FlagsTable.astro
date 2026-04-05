@@ -1,0 +1,82 @@
+---
+interface Flag {
+  flag: string;
+  type: string;
+  description: string;
+}
+
+interface Props {
+  flags: Flag[];
+}
+
+const { flags } = Astro.props;
+---
+
+<div class="flags-table-wrap">
+  <table class="flags-table">
+    <thead>
+      <tr>
+        <th>Flag</th>
+        <th>Tipo</th>
+        <th>Descripción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {flags.map((f) => (
+        <tr>
+          <td class="flag-name">{f.flag}</td>
+          <td class="flag-type">{f.type}</td>
+          <td class="flag-desc">{f.description}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .flags-table-wrap {
+    border: 1px solid var(--color-border);
+    overflow-x: auto;
+    margin-bottom: 24px;
+  }
+  .flags-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .flags-table th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-cyan);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg2);
+  }
+  .flags-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+  .flags-table tr:last-child td {
+    border-bottom: none;
+  }
+  .flag-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-cyan);
+    white-space: nowrap;
+  }
+  .flag-type {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+  .flag-desc {
+    color: var(--color-text);
+    line-height: 1.5;
+  }
+</style>

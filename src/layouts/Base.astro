@@ -1,0 +1,66 @@
+---
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import BgBlobs from '../components/BgBlobs.astro';
+import CustomCursor from '../components/CustomCursor.astro';
+import SEO from '../components/SEO.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  ogType?: 'website' | 'article';
+  publishedDate?: Date;
+  tags?: string[];
+}
+
+const {
+  title,
+  description = 'Full Stack Engineer — TypeScript · Go · Swift',
+  ogImage,
+  ogType,
+  publishedDate,
+  tags,
+} = Astro.props;
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <SEO
+      title={title}
+      description={description}
+      ogImage={ogImage}
+      ogType={ogType}
+      publishedDate={publishedDate}
+      tags={tags}
+    />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <BgBlobs />
+    <CustomCursor />
+    <Navbar />
+
+    <main class="relative z-1">
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>
+
+<style is:global>
+  @import '../styles/global.css';
+</style>

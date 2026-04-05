@@ -1,0 +1,62 @@
+---
+const links = [
+  { href: '/projects', label: 'proyectos' },
+  { href: '/blog', label: 'blog' },
+  { href: '/#stack', label: 'stack' },
+  { href: 'https://github.com/jee4nc', label: 'github ↗', external: true },
+];
+---
+
+<nav class="sticky top-0 z-100 border-b border-border bg-bg/85 backdrop-blur-lg">
+  <div class="mx-auto flex h-15 max-w-[1100px] items-center justify-between px-8">
+    <a href="/" class="font-mono text-[13px] tracking-wide text-cyan">
+      <span class="text-muted">~/</span>jcaldea
+    </a>
+    <ul class="hidden items-center gap-8 md:flex">
+      {links.map(({ href, label, external }) => (
+        <li>
+          <a
+            href={href}
+            class="font-mono text-xs tracking-widest text-muted transition-colors hover:text-cyan"
+            {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          >
+            {label}
+          </a>
+        </li>
+      ))}
+    </ul>
+    <button
+      id="menu-toggle"
+      class="flex flex-col gap-1.5 md:hidden"
+      aria-label="Abrir menú"
+    >
+      <span class="block h-px w-5 bg-muted transition-all"></span>
+      <span class="block h-px w-5 bg-muted transition-all"></span>
+    </button>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden border-t border-border md:hidden">
+    <ul class="flex flex-col gap-1 px-8 py-4">
+      {links.map(({ href, label, external }) => (
+        <li>
+          <a
+            href={href}
+            class="block py-2 font-mono text-xs tracking-widest text-muted transition-colors hover:text-cyan"
+            {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          >
+            {label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</nav>
+
+<script>
+  const toggle = document.getElementById('menu-toggle');
+  const menu = document.getElementById('mobile-menu');
+  toggle?.addEventListener('click', () => {
+    menu?.classList.toggle('hidden');
+  });
+</script>

@@ -1,0 +1,277 @@
+---
+import Docs from '../../layouts/Docs.astro';
+import Terminal from '../../components/docs/Terminal.astro';
+import InstallTabs from '../../components/docs/InstallTabs.astro';
+import FlagsTable from '../../components/docs/FlagsTable.astro';
+
+const sidebar = [
+  {
+    title: 'Inicio',
+    links: [
+      { label: 'Introducción', href: '#que-hace' },
+      { label: 'Instalación', href: '#instalacion' },
+      { label: 'Quickstart', href: '#quickstart' },
+    ],
+  },
+  {
+    title: 'Referencia',
+    links: [
+      { label: 'Flags y opciones', href: '#flags' },
+      { label: 'Profiles', href: '#profiles' },
+      { label: 'Build from source', href: '#build' },
+    ],
+  },
+  {
+    title: 'Guías',
+    links: [
+      { label: 'Build from source', href: '#build' },
+    ],
+  },
+];
+
+const toc = [
+  { label: '¿Qué hace?', href: '#que-hace' },
+  { label: 'Instalación', href: '#instalacion' },
+  { label: 'Primer uso', href: '#quickstart' },
+  { label: 'Flags', href: '#flags' },
+  { label: 'Profiles', href: '#profiles' },
+  { label: 'Build from source', href: '#build' },
+];
+
+const installTabs = [
+  {
+    label: 'macOS',
+    lines: ['# via Homebrew', 'brew tap jee4nc/tap', 'brew install taghound'],
+  },
+  {
+    label: 'Linux',
+    lines: ['# via Homebrew', 'brew tap jee4nc/tap', 'brew install taghound', '# o .deb', 'sudo dpkg -i taghound_*.deb'],
+  },
+  {
+    label: 'Windows',
+    lines: ['# via Scoop', 'scoop bucket add taghound https://github.com/jee4nc/scoop-bucket', 'scoop install taghound'],
+  },
+];
+
+const flags = [
+  { flag: '--dirty', type: 'bool', description: 'Incluye orphan tags (tags sin branch asociado)' },
+  { flag: '--profile, -p', type: 'string', description: 'Usa un profile específico para este run sin cambiar el default' },
+  { flag: '--version, -v', type: '—', description: 'Muestra la versión instalada' },
+  { flag: '--help, -h', type: '—', description: 'Muestra la ayuda' },
+];
+
+const terminalCommands = [
+  'taghound',
+  '#    ℹ️  Syncing with remote...',
+  '# ',
+  '#   TagHound — Release Tracker',
+  '# ───────────────────────────────────────────────────────',
+  '# ',
+  '#   🚀 Latest release on origin',
+  '# ───────────────────────────────────────────────────────',
+  '# ',
+  '#   🌿 origin/release-2.1  →  🏷️  v2.1.3',
+  '#      Last commit:  a7c3e01  María López  2026-04-01',
+  '#      Message:    fix: resolve token refresh on expired sessions',
+  '#      Tags:       v2.1.3, v2.1.2, v2.1.1, v2.1.0',
+  '# ',
+  '#   📦 Other releases on origin',
+  '# ───────────────────────────────────────────────────────',
+  '# ',
+  '#   🌿 origin/release-2.0  →  🏷️  v2.0.5',
+  '#      Last commit:  3fb9d44  Carlos Ruiz  2026-03-20',
+  '#      Message:    chore: bump dependencies',
+  '#      Tags:       v2.0.5, v2.0.4, v2.0.3, v2.0.2, v2.0.1, v2.0.0',
+  '# ',
+  '#   🌿 origin/release-1.0  →  🏷️  v1.0.8',
+  '#      Last commit:  e22ab91  María López  2026-02-14',
+  '#      Message:    Merged in main (pull request #42)',
+  '#      Tags:       v1.0.8, v1.0.7, v1.0.6, v1.0.5, v1.0.4, v1.0.3, v1.0.2, v1.0.1, v1.0.0',
+];
+---
+
+<Docs
+  title="taghound"
+  description="CLI que muestra el estado actual de releases en tu repositorio Git. Branches, tags y versiones ordenadas por semver — todo en un solo comando."
+  lang="Go"
+  type="CLI"
+  version="v1.2.0"
+  sidebar={sidebar}
+  toc={toc}
+>
+  <h2 id="que-hace">¿Qué hace taghound?</h2>
+  <p>
+    Cuando trabajas en equipo sobre un mismo repositorio, ubicar el último release y saber desde qué punto partir puede ser tedioso.
+    TagHound resuelve eso: sincroniza el remoto, encuentra tus branches de release y te muestra las versiones ordenadas por semver — todo en un solo comando.
+  </p>
+  <ul>
+    <li>Sincroniza tags y branches del remoto automáticamente</li>
+    <li>Identifica branches de release según tu convención de nombres</li>
+    <li>Ordena tags por semver y muestra el último release primero</li>
+    <li>Detalla commit, autor y fecha de cada branch</li>
+    <li>Opcionalmente muestra orphan tags (tags sin branch asociado)</li>
+  </ul>
+
+  <Terminal title="terminal — taghound demo" commands={terminalCommands} />
+
+  <h2 id="instalacion">Instalación</h2>
+  <InstallTabs tabs={installTabs} />
+
+  <h3>Pre-built binaries</h3>
+  <p>
+    Descarga desde la <a href="https://github.com/jee4nc/taghound/releases">página de Releases</a> el binario para tu plataforma:
+  </p>
+  <ul>
+    <li><code>darwin-arm64</code> — macOS Apple Silicon</li>
+    <li><code>linux-amd64</code> — Linux x86_64</li>
+    <li><code>windows-amd64</code> — Windows x86_64</li>
+  </ul>
+
+  <h2 id="quickstart">Primer uso</h2>
+  <p>Dentro de cualquier repositorio Git:</p>
+
+  <Terminal
+    title="terminal — quickstart"
+    commands={[
+      'taghound --dirty',
+      '#    ℹ️  Syncing with remote...',
+      '# ',
+      '#   TagHound — Release Tracker',
+      '# ───────────────────────────────────────────────────────',
+      '# ',
+      '#   🚀 Latest release on origin',
+      '# ───────────────────────────────────────────────────────',
+      '# ',
+      '#   🌿 origin/release-2.1  →  🏷️  v2.1.3',
+      '#      Last commit:  a7c3e01  María López  2026-04-01',
+      '#      Message:    fix: resolve token refresh on expired sessions',
+      '#      Tags:       v2.1.3, v2.1.2, v2.1.1, v2.1.0',
+      '# ',
+      '#   📦 Other releases on origin',
+      '# ───────────────────────────────────────────────────────',
+      '# ',
+      '#   🌿 origin/release-2.0  →  🏷️  v2.0.5',
+      '#      Last commit:  3fb9d44  Carlos Ruiz  2026-03-20',
+      '#      Message:    chore: bump dependencies',
+      '#      Tags:       v2.0.5, v2.0.4, v2.0.3, v2.0.2, v2.0.1, v2.0.0',
+      '# ',
+      '#   🌿 origin/release-1.0  →  🏷️  v1.0.8',
+      '#      Last commit:  e22ab91  María López  2026-02-14',
+      '#      Message:    Merged in main (pull request #42)',
+      '#      Tags:       v1.0.8, v1.0.7, v1.0.6, v1.0.5, v1.0.4, v1.0.3, v1.0.2, v1.0.1, v1.0.0',
+      '# ',
+      '#   🏷️  Tags without a matching branch (dirty)',
+      '# ───────────────────────────────────────────────────────',
+      '#        v3555.3555.4',
+      '#        v3555.3555.3',
+      '#        v3555.3555.2',
+      '#        v3555.3555.1',
+      '#        v3555.3555.0',
+      '#        v3527.3527.0',
+      '#        v3477.3477.6',
+      '#        v3477.3477.5',
+      '#        v3477.3477.4',
+      '#        v3477.3477.3',
+      '#        v3477.3477.2',
+      '#        v3477.3477.1',
+      '#        v3477.3477.0',
+    ]}
+  />
+
+  <h2 id="flags">Flags disponibles</h2>
+  <FlagsTable flags={flags} />
+
+  <h2 id="profiles">Profiles</h2>
+  <p>
+    TagHound usa profiles para soportar diferentes convenciones de nombres de branches y tags.
+    Cada profile define un prefijo de branch y un prefijo de tag, y genera automáticamente las regex necesarias para matchear.
+    El profile <code>default</code> matchea branches <code>release-X.Y</code> y tags <code>vX.Y.Z</code>.
+  </p>
+
+  <h3>Listar profiles</h3>
+  <p>Muestra todos los profiles configurados y cuál está activo.</p>
+  <Terminal
+    title="terminal — config list"
+    commands={[
+      'taghound config list',
+      '# ',
+      '#   TagHound Profiles',
+      '#   ────────────────────────────────────────',
+      '#   ▶ default  branch: release-  tag: v',
+    ]}
+  />
+
+  <h3>Ver detalle del profile activo</h3>
+  <p>Muestra los prefijos y las regex que TagHound genera internamente para el profile activo.</p>
+  <Terminal
+    title="terminal — config show"
+    commands={[
+      'taghound config show',
+      '# ',
+      '#   Active profile: default',
+      '#   ────────────────────────────────────────',
+      '#   Branch prefix:  release-',
+      '#   Tag prefix:     v',
+      '#   Branch regex:   ^(?:origin/)?release-(\\d+)\\.(\\d+)$',
+      '#   Tag regex:      ^v(\\d+)\\.(\\d+)\\.(\\d+)$',
+    ]}
+  />
+
+  <h3>Crear un profile</h3>
+  <p>Usa <code>config set</code> para crear o actualizar un profile con prefijos personalizados.</p>
+  <Terminal
+    title="terminal — config set"
+    commands={[
+      'taghound config set example --branch example- --tag v',
+      '#   ✅ Profile \'example\' created',
+      '#      branch: example-  tag: v',
+    ]}
+  />
+
+  <h3>Cambiar profile activo</h3>
+  <p>Cambia el profile activo con <code>config use</code>. Los siguientes runs de <code>taghound</code> usarán este profile.</p>
+  <Terminal
+    title="terminal — config use"
+    commands={[
+      'taghound config use example',
+      '#   ✅ Active profile: example',
+    ]}
+  />
+
+  <p>
+    También puedes usar un profile específico para un solo run sin cambiar el default, con el flag <code>--profile</code>:
+  </p>
+  <Terminal
+    title="terminal — profile flag"
+    commands={[
+      'taghound --profile example',
+    ]}
+  />
+
+  <p>La configuración se guarda en <code>~/.config/taghound/config.json</code>.</p>
+
+  <h2 id="build">Build from source</h2>
+  <p>Requiere Go instalado.</p>
+  <Terminal
+    title="terminal — build"
+    commands={[
+      '# Build para todas las plataformas',
+      'make build',
+      '# ',
+      '# Build para una plataforma específica',
+      'make darwin-arm64',
+      'make linux-amd64',
+      'make windows-amd64',
+      '# ',
+      '# Correr tests',
+      'make test',
+    ]}
+  />
+
+  <p>
+    Los binarios se generan en <code>dist/</code> con flags optimizados (<code>-s -w</code>) para tamaño mínimo.
+  </p>
+  <p>
+    <strong>Zero dependencias externas.</strong> TagHound usa solo la stdlib de Go. Git se invoca via <code>os/exec</code> — sin libgit2, sin CGO.
+  </p>
+</Docs>

@@ -1,0 +1,690 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 4);
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('es-CL', { year: 'numeric', month: 'short' });
+}
+---
+
+<Base title="Jean Carlos Aldea">
+  <div class="mx-auto max-w-[1100px] px-8">
+
+    <!-- ── HERO ── -->
+    <section class="hero-section pb-25 pt-30">
+      <div class="hero-tag">
+        <span class="block h-px w-6 bg-cyan"></span>
+        Full Stack Engineer
+      </div>
+      <h1 class="hero-name">
+        Jean Carlos
+        <span class="block text-cyan drop-shadow-[0_0_60px_rgba(0,212,255,0.3)]">Aldea</span>
+      </h1>
+      <p class="hero-role">
+        Santiago, Chile
+        <span class="sep">/</span>
+        Node.js · Go · Swift
+        <span class="sep">/</span>
+        AWS · GCP · Kubernetes
+      </p>
+      <p class="hero-desc">
+        Microservicios, CLIs y herramientas de equipo. Actualmente en Ripley Chile, diseñando servicios de escala corporativa con operaciones multi-país en producción.
+      </p>
+      <div class="hero-ctas">
+        <a href="/projects" class="btn-primary">ver proyectos →</a>
+        <a href="/blog" class="btn-ghost">leer el blog</a>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="stats-bar">
+        <div class="stat">
+          <div class="stat-val">Escala corp.</div>
+          <div class="stat-label">servicios en producción</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">6+</div>
+          <div class="stat-label">años de experiencia</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">GCP / AWS</div>
+          <div class="stat-label">cloud en producción</div>
+        </div>
+        <div class="stat stat-last">
+          <div class="stat-val">Open Source</div>
+          <div class="stat-label">contribuciones activas</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="h-px bg-border"></div>
+
+    <!-- ── PROJECTS ── -->
+    <section class="section" id="projects">
+      <div class="section-head">
+        <span class="section-label">01</span>
+        <h2 class="section-title">Proyectos</h2>
+        <div class="section-line"></div>
+      </div>
+
+      <div class="projects-grid">
+        <!-- Featured: taghound -->
+        <a href="/projects/taghound" class="project-card featured interactive">
+          <div>
+            <div class="project-meta">
+              <span class="badge badge-cyan">Go</span>
+              <span class="badge badge-violet">CLI</span>
+              <span class="project-num">01</span>
+            </div>
+            <div class="project-title">taghound</div>
+            <p class="project-desc">
+              Fetcher de Git tags multi-repositorio. Distribuido via Homebrew, Scoop y .deb. Pensado para equipos con muchos microservicios.
+            </p>
+            <div class="project-tags">
+              <span class="tag">GoReleaser</span>
+              <span class="tag">Homebrew</span>
+              <span class="tag">cross-platform</span>
+            </div>
+          </div>
+          <div class="project-install">
+            <div class="install-title">Instalación rápida</div>
+            <div><span class="prompt">$</span>brew tap jee4nc/tap</div>
+            <div class="mt-2"><span class="prompt">$</span>brew install taghound</div>
+          </div>
+        </a>
+
+        <!-- packwatch -->
+        <a href="/projects/packwatch" class="project-card interactive">
+          <div class="project-meta">
+            <span class="badge badge-cyan">Go</span>
+            <span class="badge badge-violet">TUI</span>
+            <span class="project-num">02</span>
+          </div>
+          <div class="project-title">packwatch</div>
+          <p class="project-desc">
+            TUI interactivo para gestionar actualizaciones de dependencias npm. Lee package-lock.json con consultas concurrentes al registry.
+          </p>
+          <div class="project-tags">
+            <span class="tag">goroutines</span>
+            <span class="tag">npm registry</span>
+            <span class="tag">bubbletea</span>
+          </div>
+        </a>
+
+        <!-- PrintSII -->
+        <div class="project-card interactive">
+          <div class="project-meta">
+            <span class="badge badge-orange">Swift</span>
+            <span class="badge badge-violet">iOS</span>
+            <span class="project-num">03</span>
+          </div>
+          <div class="project-title">PrintSII</div>
+          <p class="project-desc">
+            App iOS para imprimir boletas electrónicas del SII en impresoras Epson TM-m30III via WiFi/AirPrint con detección de código de barras.
+          </p>
+          <div class="project-tags">
+            <span class="tag">PDFKit</span>
+            <span class="tag">Vision</span>
+            <span class="tag">AirPrint</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="h-px bg-border"></div>
+
+    <!-- ── BLOG ── -->
+    <section class="section" id="blog">
+      <div class="section-head">
+        <span class="section-label">02</span>
+        <h2 class="section-title">Blog</h2>
+        <div class="section-line"></div>
+      </div>
+
+      <div class="posts-list">
+        {posts.map((post) => (
+          <a href={`/blog/${post.id}`} class="post-item interactive">
+            <span class="post-date">{formatDate(post.data.date)}</span>
+            <span class="post-title">{post.data.title}</span>
+            <div class="post-tags-group">
+              {post.data.tags.map((tag) => (
+                <span class="post-tag">{tag}</span>
+              ))}
+            </div>
+            <span class="post-arrow">→</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <div class="h-px bg-border"></div>
+
+    <!-- ── STACK ── -->
+    <section class="section" id="stack">
+      <div class="section-head">
+        <span class="section-label">03</span>
+        <h2 class="section-title">Stack</h2>
+        <div class="section-line"></div>
+      </div>
+
+      <div class="stack-grid">
+        <div class="stack-group">
+          <div class="stack-group-title">Frontend</div>
+          <div class="stack-items">
+            <span class="stack-item">TypeScript</span>
+            <span class="stack-item">React / Next.js</span>
+            <span class="stack-item">SvelteKit</span>
+            <span class="stack-item">Astro</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <div class="stack-group-title">Backend</div>
+          <div class="stack-items">
+            <span class="stack-item">Node.js</span>
+            <span class="stack-item">Go</span>
+            <span class="stack-item">Python</span>
+            <span class="stack-item">REST / gRPC</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <div class="stack-group-title">Databases</div>
+          <div class="stack-items">
+            <span class="stack-item">MongoDB</span>
+            <span class="stack-item">PostgreSQL</span>
+            <span class="stack-item">DynamoDB</span>
+            <span class="stack-item">Redis</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <div class="stack-group-title">Infra</div>
+          <div class="stack-items">
+            <span class="stack-item">AWS / GCP</span>
+            <span class="stack-item">Kubernetes</span>
+            <span class="stack-item">Docker</span>
+            <span class="stack-item">CI/CD</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <div class="stack-group-title">Observabilidad</div>
+          <div class="stack-items">
+            <span class="stack-item">Datadog</span>
+            <span class="stack-item">SLOs / Monitors</span>
+            <span class="stack-item">SonarQube</span>
+            <span class="stack-item">SOPS + Age</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── POWERED BY ── -->
+    <section class="powered-section">
+      <div class="powered-label">Hecho con</div>
+      <div class="powered-pills">
+        <span class="pill">Astro</span>
+        <span class="pill">TypeScript</span>
+        <span class="pill">Tailwind CSS</span>
+        <span class="pill">MDX</span>
+        <span class="pill pill-accent">Vercel</span>
+      </div>
+    </section>
+
+  </div>
+</Base>
+
+<style>
+  /* ── Hero animations ── */
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-cyan);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.1s;
+  }
+  .hero-name {
+    font-size: clamp(48px, 7vw, 88px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.2s;
+  }
+  .hero-role {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--color-muted);
+    margin-top: 8px;
+    margin-bottom: 36px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.35s;
+  }
+  .hero-role .sep {
+    margin: 0 10px;
+    color: var(--color-border);
+  }
+  .hero-desc {
+    max-width: 520px;
+    font-size: 17px;
+    line-height: 1.7;
+    color: #94a3b8;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.45s;
+  }
+  .hero-ctas {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.55s;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--color-cyan);
+    color: var(--color-bg);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 212, 255, 0.35);
+  }
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    color: var(--color-muted);
+    border: 1px solid var(--color-border);
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-ghost:hover {
+    border-color: var(--color-cyan);
+    color: var(--color-cyan);
+  }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: flex;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    margin-top: 80px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.65s;
+  }
+  .stat {
+    flex: 1;
+    padding: 24px 32px;
+    border-right: 1px solid var(--color-border);
+  }
+  .stat-last {
+    border-right: none;
+  }
+  .stat-val {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--color-cyan);
+    letter-spacing: -0.02em;
+    font-family: var(--font-mono);
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--color-muted);
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ── Section headers ── */
+  .section {
+    padding: 96px 0;
+  }
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 56px;
+  }
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-cyan);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .section-title {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  /* ── Projects grid ── */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .project-card {
+    background: var(--color-bg2);
+    border: 1px solid var(--color-border);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: pointer;
+  }
+  .project-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-cyan), var(--color-violet));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  .project-card:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    transform: translateY(-3px);
+  }
+  .project-card:hover::before {
+    transform: scaleX(1);
+  }
+  .project-card.featured {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .project-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+  .badge-cyan {
+    color: var(--color-cyan);
+    background: var(--color-cyan-dim);
+    border-color: rgba(0, 212, 255, 0.2);
+  }
+  .badge-violet {
+    color: var(--color-violet);
+    background: rgba(124, 92, 252, 0.12);
+    border-color: rgba(124, 92, 252, 0.25);
+  }
+  .badge-orange {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.2);
+  }
+  .project-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-muted);
+    margin-left: auto;
+  }
+  .project-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .project-desc {
+    font-size: 14px;
+    color: var(--color-muted);
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+  .project-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-muted);
+    border: 1px solid var(--color-border);
+    padding: 3px 10px;
+    letter-spacing: 0.08em;
+  }
+  .project-install {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    padding: 20px 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    border-left: 2px solid var(--color-cyan);
+    color: var(--color-text);
+  }
+  .install-title {
+    color: var(--color-muted);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .prompt {
+    color: var(--color-cyan);
+    margin-right: 8px;
+  }
+
+  /* ── Blog posts ── */
+  .posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+  }
+  .post-item {
+    background: var(--color-bg2);
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s;
+  }
+  .post-item:hover {
+    background: var(--color-bg3);
+  }
+  .post-date {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-muted);
+    min-width: 80px;
+    letter-spacing: 0.05em;
+  }
+  .post-title {
+    font-size: 16px;
+    font-weight: 600;
+    flex: 1;
+  }
+  .post-tags-group {
+    display: flex;
+    gap: 8px;
+  }
+  .post-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-cyan);
+    background: var(--color-cyan-dim);
+    padding: 2px 8px;
+    border: 1px solid rgba(0, 212, 255, 0.15);
+  }
+  .post-arrow {
+    color: var(--color-muted);
+    font-size: 18px;
+    transition: transform 0.2s, color 0.2s;
+  }
+  .post-item:hover .post-arrow {
+    transform: translateX(4px);
+    color: var(--color-cyan);
+  }
+
+  /* ── Stack grid ── */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .stack-group {
+    background: var(--color-bg2);
+    border: 1px solid var(--color-border);
+    padding: 20px 24px;
+  }
+  .stack-group-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-cyan);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .stack-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .stack-item {
+    font-size: 13px;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stack-item::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    background: var(--color-violet);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Powered by ── */
+  .powered-section {
+    padding: 48px 0 96px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .powered-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .powered-pills {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  .pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text);
+    background: var(--color-bg2);
+    border: 1px solid var(--color-border);
+    padding: 6px 16px;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .pill:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    color: var(--color-cyan);
+  }
+  .pill-accent {
+    color: var(--color-cyan);
+    border-color: rgba(0, 212, 255, 0.25);
+    background: var(--color-cyan-dim);
+  }
+
+  /* ── Animation ── */
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .stats-bar {
+      flex-direction: column;
+    }
+    .stat {
+      border-right: none;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .stat-last {
+      border-bottom: none;
+    }
+    .projects-grid {
+      grid-template-columns: 1fr;
+    }
+    .project-card.featured {
+      grid-column: span 1;
+      grid-template-columns: 1fr;
+    }
+    .stack-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .post-item {
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      padding: 20px 24px;
+    }
+    .post-tags-group {
+      order: 4;
+    }
+  }
+</style>

@@ -1,0 +1,27 @@
+---
+const links = [
+  { href: 'https://github.com/jee4nc', label: 'github' },
+  { href: 'https://linkedin.com/in/jcaldea', label: 'linkedin' },
+  { href: 'mailto:contacto@jcaldea.dev', label: 'correo' },
+];
+---
+
+<footer class="border-t border-border">
+  <div class="mx-auto flex max-w-[1100px] items-center justify-between px-8 py-10">
+    <span class="font-mono text-[11px] text-muted">
+      © {new Date().getFullYear()} Jean Carlos Aldea — jcaldea.dev
+    </span>
+    <div class="flex gap-6">
+      {links.map(({ href, label }) => (
+        <a
+          href={href}
+          class="font-mono text-[11px] text-muted transition-colors hover:text-cyan"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {label}
+        </a>
+      ))}
+    </div>
+  </div>
+</footer>

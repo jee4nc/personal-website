@@ -1,0 +1,157 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="404">
+  <div class="mx-auto max-w-[1100px] px-8">
+    <section class="error-section">
+      <div class="error-tag">
+        <span class="block h-px w-6 bg-cyan"></span>
+        Error 404
+      </div>
+      <h1 class="error-code">
+        4<span class="text-cyan drop-shadow-[0_0_60px_rgba(0,212,255,0.3)]">0</span>4
+      </h1>
+      <p class="error-msg">
+        Esta ruta no existe o fue movida.
+      </p>
+      <div class="error-ctas">
+        <a href="/" class="btn-primary">volver al inicio →</a>
+        <a href="/blog" class="btn-ghost">leer el blog</a>
+      </div>
+
+      <div class="error-hint">
+        <span class="prompt">$</span> curl -s jcaldea.dev<span class="path">{Astro.url.pathname}</span>
+        <br />
+        <span class="output">404 — not found</span>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .error-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 160px 0 200px;
+  }
+
+  .error-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-cyan);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.1s;
+  }
+
+  .error-code {
+    font-size: clamp(80px, 15vw, 180px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.2s;
+  }
+
+  .error-msg {
+    font-size: 17px;
+    line-height: 1.7;
+    color: #94a3b8;
+    margin-top: 16px;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.35s;
+  }
+
+  .error-ctas {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.45s;
+  }
+
+  /* Buttons — same as index */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--color-cyan);
+    color: var(--color-bg);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 212, 255, 0.35);
+  }
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    color: var(--color-muted);
+    border: 1px solid var(--color-border);
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-ghost:hover {
+    border-color: var(--color-cyan);
+    color: var(--color-cyan);
+  }
+
+  /* Terminal hint */
+  .error-hint {
+    margin-top: 80px;
+    background: var(--color-bg2);
+    border: 1px solid var(--color-border);
+    border-left: 2px solid var(--color-cyan);
+    padding: 20px 28px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    text-align: left;
+    color: var(--color-text);
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.55s;
+  }
+  .prompt {
+    color: var(--color-cyan);
+    margin-right: 8px;
+  }
+  .path {
+    color: var(--color-muted);
+  }
+  .output {
+    color: #f87171;
+    font-size: 12px;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
