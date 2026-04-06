@@ -1,0 +1,103 @@
+---
+title: "¿Por qué elegí Astro para mi sitio personal?"
+description: "Comparando Astro con Next.js, Hugo y otras alternativas para un portfolio con blog. Qué me convenció y qué sacrifiqué."
+date: 2026-04-06
+tags: ["astro", "frontend", "opinión"]
+---
+
+import { Image } from 'astro:assets';
+import sitio from '../../assets/blog/por-que-astro/sitio.png';
+import lighthouse from '../../assets/blog/por-que-astro/lighthouse.png';
+import buildTime from '../../assets/blog/por-que-astro/build-time.gif';
+
+## El contexto
+
+Quería un sitio personal con blog, portfolio de proyectos y buena performance. Los requisitos eran simples:
+
+1. Contenido mayormente estático (posts en MDX, páginas de proyectos)
+2. Buen DX — hot reload rápido, sin configuración excesiva
+3. Deploy simple a Vercel
+4. Flexibilidad para meter interactividad donde hiciera falta
+
+<Image src={sitio} alt="Screenshot del sitio terminado" width={720} format="webp" quality={80} />
+
+## Las alternativas que evalué
+
+### Next.js
+
+En la pega uso React a diario, así que Next.js era la opción natural. De hecho, mi primer intento de este sitio fue con Next — pero me di cuenta rápido de que estaba peleando con el framework más de lo que estaba escribiendo contenido. Configurar MDX requería plugins, el App Router me agregaba complejidad que no necesitaba (server components, layouts anidados, caching layers), y el bundle final traía React completo para renderizar páginas que eran puro texto. Para un blog es usar un cañón para matar una mosca.
+
+### Hugo
+
+Le di una oportunidad un fin de semana. El build es absurdamente rápido, eso sí. Pero el sistema de templates en Go me hizo sufrir — quería hacer algo tan simple como un componente reutilizable con props y terminé peleando con `{{ partial }}` y pipes. Si en algún momento necesitaba meter un componente interactivo, no había camino limpio.
+
+### Gatsby
+
+Lo usé en un proyecto freelance hace unos años. En ese momento era la alternativa para sitios estáticos con React. Pero el GraphQL obligatorio para todo (hasta para leer un markdown local) agrega friction innecesaria, y el ecosistema perdió momentum.
+
+### 11ty (Eleventy)
+
+Muy bueno para sitios estáticos puros y tiene una comunidad sólida. Pero cuando investigué cómo meter un componente React interactivo en medio de una página, la historia no era tan limpia como en Astro. Para un blog sin interactividad habría sido buena opción.
+
+## ¿Por qué Astro ganó?
+
+### Zero JS por defecto
+
+Astro envía **cero JavaScript** al cliente a menos que explícitamente lo pidas con `client:*` directives. Para un blog donde el 95% del contenido es texto e imágenes, esto es exactamente lo que quiero.
+
+```astro
+<!-- Esto NO envía JS al cliente -->
+<Card title="Proyecto" description="..." />
+
+<!-- Esto SÍ, solo cuando es visible -->
+<ReactCounter client:visible />
+```
+
+<Image src={lighthouse} alt="Lighthouse con 99/100 en performance" width={720} format="webp" quality={80} />
+
+### Content Collections
+
+El sistema de content collections con validación de schema via Zod es limpio. Defino mi esquema una vez y Astro me da tipado y validación gratis:
+
+```typescript
+// Definir el esquema una vez...
+const blog = defineCollection({
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    date: z.coerce.date(),
+    tags: z.array(z.string()),
+    draft: z.boolean().default(false),
+  }),
+});
+```
+
+Y después consumirlo con tipado completo y filtros — sin GraphQL, sin queries raras:
+
+```typescript
+// ...y consultarlo con tipado automático
+const posts = await getCollection('blog', ({ data }) => !data.draft);
+// posts[0].data.title → string, posts[0].data.date → Date
+```
+
+### MDX + cualquier framework
+
+Astro soporta MDX de forma nativa y es agnóstico de framework — puedo importar componentes de React, Svelte, o Vue si los necesito. En la práctica, uso componentes `.astro` para casi todo porque son más simples (cero runtime), pero saber que puedo meter un widget interactivo en React en medio de un post sin configurar nada extra me da tranquilidad. En Next o Gatsby esto es el default; en Hugo o 11ty es un dolor.
+
+### Build rápido con Vite
+
+Astro usa Vite por debajo. El dev server levanta en menos de un segundo y el HMR es instantáneo. El build de producción de este sitio toma poco más de un segundo:
+
+<Image src={buildTime} alt="Build de producción en ~1 segundo" width={720} format="webp" quality={80} />
+
+## ¿Qué sacrifiqué?
+
+- **Ecosistema más chico** que Next.js — menos ejemplos, menos respuestas en Stack Overflow
+- **No es ideal para apps dinámicas** — si necesitara auth, dashboards, o mucho estado del lado del cliente, elegiría otra cosa
+- **Comunidad más joven** — aunque crece rápido, no tiene el respaldo corporativo de Vercel/Next
+
+## Conclusión
+
+Después de probar varias opciones, Astro fue el framework donde dejé de configurar y empecé a escribir. Lo que más me sorprendió es lo poco que tuve que pelear — en un fin de semana tenía el sitio funcionando con blog, proyectos y deploy a Vercel.
+
+Si estás evaluando opciones para un sitio personal, mi consejo es: si tu contenido es mayormente estático y no necesitas un SPA completo, dale una oportunidad a Astro. La diferencia en performance y simplicidad se nota desde el primer build.

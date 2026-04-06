@@ -93,10 +93,11 @@ function formatDate(date: Date) {
 
   .post-title {
     font-size: clamp(28px, 5vw, 40px);
-    font-weight: 800;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
     margin-bottom: 16px;
+    font-family: var(--font-mono);
   }
 
   .post-desc {
@@ -148,10 +149,15 @@ function formatDate(date: Date) {
     color: var(--color-text);
     font-weight: 700;
   }
-  .prose :global(ul),
+  .prose :global(ul) {
+    margin-bottom: 20px;
+    padding-left: 24px;
+    list-style-type: disc;
+  }
   .prose :global(ol) {
     margin-bottom: 20px;
     padding-left: 24px;
+    list-style-type: decimal;
   }
   .prose :global(li) {
     margin-bottom: 8px;
