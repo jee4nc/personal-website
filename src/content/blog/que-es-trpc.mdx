@@ -1,0 +1,117 @@
+---
+title: "tRPC: ¿vale la pena dejar REST?"
+description: "Qué es tRPC, cómo funciona, cuándo tiene sentido usarlo y cuándo quedarte con REST. Con ejemplos reales y opinión honesta."
+date: 2026-04-08
+tags: ["typescript", "backend", "opinión"]
+---
+
+## El problema que resuelve
+
+Si trabajas con TypeScript en el frontend y en el backend, seguro has vivido esto: defines una ruta en Express, escribes los tipos del response, después vas al cliente y vuelves a escribir los mismos tipos — o peor, usas `any` y rezas. Cambias un campo en la API y el frontend se entera en runtime, cuando el usuario ya vio un error.
+
+tRPC existe para eliminar esa fricción. Es una librería que te permite llamar funciones del backend **directamente desde el frontend**, con tipado end-to-end, sin generar código, sin escribir schemas OpenAPI, sin duplicar tipos. Suena a magia, pero el truco es más simple de lo que parece.
+
+## ¿Cómo funciona?
+
+tRPC no genera código ni usa code-gen. Lo que hace es compartir los **tipos de TypeScript** entre el servidor y el cliente a través de la inferencia de tipos. Tú defines tus procedimientos en el backend y exportas el tipo del router — el cliente importa ese tipo y TypeScript se encarga del resto.
+
+### El servidor
+
+```typescript
+// server/trpc.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  // Query — equivalente a un GET
+  getUser: t.procedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      const user = await db.user.findUnique({ where: { id: input.id } });
+      return user; // el tipo se infiere automáticamente
+    }),
+
+  // Mutation — equivalente a un POST/PUT
+  updateUser: t.procedure
+    .input(z.object({
+      id: z.string(),
+      name: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      return db.user.update({
+        where: { id: input.id },
+        data: { name: input.name },
+      });
+    }),
+});
+
+// Esto es lo que el cliente importa — solo el TIPO, no el código
+export type AppRouter = typeof appRouter;
+```
+
+### El cliente
+
+```typescript
+// client/trpc.ts
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../server/trpc';
+
+const trpc = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],
+});
+
+// Autocompletado completo — sabe que getUser recibe { id: string }
+// y retorna el tipo exacto que devuelve tu query
+const user = await trpc.getUser.query({ id: '123' });
+console.log(user.name); // ✅ tipado, sin cast, sin any
+
+// Si cambias el schema en el servidor, esto da error en compile time
+const user2 = await trpc.getUser.query({ id: 123 }); // ❌ Error: id debe ser string
+```
+
+Eso es todo. No hay archivo `.yaml` de OpenAPI, no hay `codegen` corriendo en un script aparte. Cambias el backend, guardas, y el frontend te avisa inmediatamente si algo se rompió.
+
+## ¿Cuándo tiene sentido usar tRPC?
+
+Acá va lo importante — tRPC no es para todo. Brilla en escenarios específicos:
+
+- **Monorepo con TypeScript en ambos lados** — esta es la condición fundamental. Si tu frontend y backend viven en el mismo repo (o al menos comparten tipos), tRPC te da superpoderes. Pensá en un proyecto Next.js con API routes, o un monorepo con Turborepo/Nx.
+
+- **Equipos full-stack** — cuando las mismas personas tocan el frontend y el backend, tRPC elimina la ceremonia de mantener contratos API sincronizados. Es como si tu API fuera una función local.
+
+- **Prototipos y MVPs** — cuando necesitas iterar rápido y no quieres perder tiempo definiendo schemas formales. Cambias la función, el tipo se propaga, seguís.
+
+- **Apps internas o herramientas** — donde no necesitas que clientes externos consuman tu API. Dashboards internos, admin panels, herramientas de equipo.
+
+## ¿Cuándo quedarte con REST?
+
+- **Tu API es consumida por clientes que no controlas** — apps móviles en Swift/Kotlin, integraciones de terceros, partners. tRPC es TypeScript-only. Si alguien fuera de tu repo necesita usar tu API, necesitan HTTP estándar con documentación clara.
+
+- **Frontend y backend en lenguajes distintos** — si tu backend es Go, Python, o Java, tRPC no aplica. El tipado end-to-end depende de que ambos lados hablen TypeScript.
+
+- **Equipos separados de frontend y backend** — si el equipo de front y el de back son distintos y se coordinan vía contratos API, REST con OpenAPI es mejor. El schema explícito sirve como documentación y contrato formal entre equipos.
+
+- **Necesitas caching HTTP agresivo** — REST tiene la ventaja de que las URLs son cacheables por CDNs, proxies, y el browser de forma nativa. tRPC puede cachear, pero pierdes la semántica HTTP que las infraestructuras de caching ya entienden.
+
+- **APIs públicas** — si tu API es un producto (estilo Stripe, GitHub, Mercado Pago), REST o GraphQL con documentación generada es el camino.
+
+## tRPC vs REST vs GraphQL — en corto
+
+| | **REST** | **GraphQL** | **tRPC** |
+|---|---|---|---|
+| **Tipado E2E** | Manual o con codegen | Con codegen | Automático |
+| **Clientes externos** | ✅ Cualquier lenguaje | ✅ Cualquier lenguaje | ❌ Solo TypeScript |
+| **Overhead de setup** | Bajo | Medio-alto | Muy bajo |
+| **Over/under fetching** | Posible | Resuelto | Resuelto |
+| **Curva de aprendizaje** | Baja | Media | Baja (si sabes TS) |
+| **Documentación auto** | OpenAPI/Swagger | Playground/Schema | No estándar |
+
+## Mi opinión honesta
+
+He usado tRPC en proyectos side-project con Next.js y la experiencia de desarrollo es adictiva. Cambias algo en el backend, vuelves al componente de React, y el error aparece antes de que guardes el archivo. No hay un momento de "¿qué shape tiene este response?" — TypeScript ya lo sabe.
+
+Pero en la pega, donde tenemos apps móviles consumiendo las mismas APIs y equipos separados, REST con buena documentación sigue siendo la opción correcta. tRPC resuelve un problema real — la desincronización de tipos entre frontend y backend — pero lo hace con una restricción fuerte: ambos lados tienen que ser TypeScript y vivir cerca.
+
+Si estás arrancando un proyecto full-stack en TypeScript y no necesitas exponer tu API al mundo, dale una oportunidad a tRPC. La velocidad de iteración se nota desde el primer endpoint. Pero si tu API es un contrato público o la consumen clientes en otros lenguajes, REST sigue siendo el rey — y no tiene nada de malo.
