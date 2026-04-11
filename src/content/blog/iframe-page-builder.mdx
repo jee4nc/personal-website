@@ -1,0 +1,183 @@
+---
+title: "El iframe que no quería caber: construyendo un page builder con CSS transform"
+description: "Cómo hice que un iframe de 1440px quepa en un panel de 700px sin romper el layout, y los bugs sutiles que aparecen cuando mezclas scale(), ResizeObserver y medición de altura."
+date: 2026-04-11
+tags: ["css", "frontend", "next.js"]
+---
+
+## El contexto
+
+Estoy construyendo una plataforma ecommerce multi-tenant con Next.js. Cada tienda tiene su storefront y un panel de administración. Dentro del admin, hay un editor de página tipo page builder — un sidebar con la lista de secciones (hero, categorías, productos destacados, newsletter) y al lado un preview en vivo del storefront.
+
+El preview es un `<iframe>` que carga la tienda real. El admin edita una sección, el iframe se refresca, y ve el resultado inmediatamente. Simple en concepto, sorprendentemente jodido en ejecución.
+
+## El problema: un iframe que no cabe
+
+El storefront está diseñado para pantallas completas. Cuando lo metí dentro de un iframe en el panel de admin, pasó lo obvio: el iframe necesita el ancho completo del viewport para renderizar bien, pero solo tiene el espacio que le deja el sidebar (~700px). El resultado era un storefront cortado — la mitad derecha simplemente no existía.
+
+La primera reacción fue ponerle `width: 100%` al iframe. Pero eso hace que el storefront se renderice a 700px, activando breakpoints mobile y tablet. El admin ve una versión mobile de su tienda desktop. No sirve.
+
+## La solución: transform scale
+
+El patrón es conocido — Shopify, Webflow y otros editores lo usan. La idea:
+
+1. El iframe se renderiza a su ancho real (ej: 1440px)
+2. Se escala visualmente con `transform: scale()` para caber en el espacio disponible
+3. El contenedor se ajusta para que no quede espacio muerto
+
+```tsx
+const iframeWidth = 1440;
+const scale = containerWidth / iframeWidth; // ej: 700 / 1440 = 0.48
+
+<div style={{ width: iframeWidth * scale, height: contentHeight * scale }}>
+  <iframe
+    style={{
+      width: iframeWidth,
+      height: contentHeight,
+      transform: `scale(${scale})`,
+      transformOrigin: 'top left',
+    }}
+  />
+</div>
+```
+
+Tailwind dentro del iframe ve 1440px de ancho y renderiza el layout desktop completo. El `transform: scale(0.48)` lo reduce visualmente al 48% para que quepa en los 700px del panel. El wrapper tiene el tamaño del resultado visual para que no haya overflow ni espacio muerto.
+
+Suena limpio. En la práctica, cada paso tiene trampas.
+
+## Trampa 1: medir el contenedor disponible
+
+Necesitas saber cuánto espacio tiene el panel de preview para calcular el scale. La opción obvia es un `ResizeObserver` en el contenedor.
+
+```tsx
+const [containerWidth, setContainerWidth] = useState(0);
+const containerRef = useRef<HTMLDivElement>(null);
+
+useEffect(() => {
+  const el = containerRef.current;
+  if (!el) return;
+  const observer = new ResizeObserver(([entry]) => {
+    setContainerWidth(entry.contentRect.width);
+  });
+  observer.observe(el);
+  return () => observer.disconnect();
+}, []);
+```
+
+El problema: si el iframe de 1440px está **dentro** del contenedor que estás midiendo, infla el ancho medido. El `contentRect.width` reporta 1440px porque el contenido empuja al padre. El scale se calcula como 1.0 y no se escala nada.
+
+Intenté varias cosas para desacoplar la medición:
+- `min-w-0` en los flex/grid items para romper `min-width: auto`
+- `overflow-x: hidden` en el contenedor
+- Un div vacío `absolute inset-0` dedicado solo a ser medido
+- `clientWidth` en vez de `contentRect.width`
+
+Ninguna funcionó de forma confiable. El iframe siempre encontraba la forma de inflar algo.
+
+### Lo que sí funcionó: calcular desde arriba
+
+En vez de medir el contenedor, calculé el ancho disponible aritméticamente a partir de `window.innerWidth` y los valores conocidos del layout:
+
+```tsx
+const [windowWidth, setWindowWidth] = useState(0);
+
+useEffect(() => {
+  const update = () => setWindowWidth(window.innerWidth);
+  update();
+  window.addEventListener("resize", update);
+  return () => window.removeEventListener("resize", update);
+}, []);
+
+// Layout constants from CSS
+const SIDEBAR = 380;    // sidebar width
+const PAGE_PAD = 48;    // px-6 * 2
+const GAP = 24;         // gap-6
+const BORDER = 2;       // panel border
+
+const containerWidth = windowWidth - PAGE_PAD - BORDER
+  - (sidebarOpen ? SIDEBAR + GAP : 0);
+```
+
+Es menos elegante que un `ResizeObserver`, pero es 100% confiable — no depende de ningún elemento DOM que pueda inflarse.
+
+## Trampa 2: el ancho "correcto" del iframe
+
+Mi primer approach fue hardcodear `1440px` como el ancho del iframe en modo desktop. Funcionaba, pero el admin veía cosas raras — texto que se cortaba, categorías del nav que wrapeaban en dos líneas. En su pantalla real (1920px), todo se veía bien.
+
+El problema: 1440px no es el viewport del admin. Su storefront se ve distinto a 1440px que a 1920px. Si el page builder muestra una versión a 1440px, el admin piensa que algo está roto cuando en realidad su tienda se ve perfecta.
+
+La solución fue usar `window.innerWidth` como el ancho del iframe en modo desktop. Así el preview renderiza exactamente como el admin ve su tienda al abrir otra pestaña.
+
+```tsx
+const iframeWidth = viewportMode === "desktop"
+  ? windowWidth
+  : VIEWPORT_WIDTHS[viewportMode]; // 768 para tablet, 375 para mobile
+```
+
+## Trampa 3: la altura que solo crece
+
+La altura del contenido del iframe hay que medirla desde dentro — no hay forma confiable de saber cuánto mide la página del storefront desde afuera. La solución natural es inyectar un `ResizeObserver` dentro del iframe y reportar la altura via `postMessage`:
+
+```javascript
+// Inyectado dentro del iframe
+const ro = new ResizeObserver(() => {
+  window.parent.postMessage({
+    type: 'cms-height',
+    height: document.documentElement.scrollHeight,
+  }, '*');
+});
+ro.observe(document.documentElement);
+```
+
+Funciona bien hasta que cambias de viewport. Este fue el bug más sutil de todo el proceso.
+
+El flujo:
+1. Desktop: contenido mide 3600px → `iframeContentHeight = 3600`
+2. Cambio a mobile: contenido refluye y mide 5400px → `iframeContentHeight = 5400`
+3. Vuelvo a desktop: el iframe tiene `height: 5400px`, el body se estira a 5400px (por `min-height: 100%` del storefront), y `scrollHeight` reporta 5400px — **nunca baja**
+
+El `scrollHeight` retorna el máximo entre la altura del contenido y la altura del elemento. Como el iframe ya tiene 5400px de height, el body se estira, y la medición siempre devuelve 5400 o más. Un feedback loop donde la altura solo puede crecer.
+
+Hay dos partes en el fix:
+
+Primero, medir el contenido real en vez de `scrollHeight`. Recorrer los hijos directos del body y encontrar el bottom más lejano:
+
+```javascript
+function measureContentHeight() {
+  var children = document.body.children;
+  var maxBottom = 0;
+  for (var i = 0; i < children.length; i++) {
+    var tag = children[i].tagName;
+    if (tag === 'SCRIPT' || tag === 'STYLE') continue;
+    var rect = children[i].getBoundingClientRect();
+    var bottom = Math.ceil(rect.bottom + window.scrollY);
+    if (bottom > maxBottom) maxBottom = bottom;
+  }
+  if (maxBottom > 0) {
+    window.parent.postMessage({ type: 'cms-height', height: maxBottom }, '*');
+  }
+}
+```
+
+Segundo, resetear la altura del iframe al cambiar de viewport. Esto fuerza al body a colapsar antes de la nueva medición:
+
+```tsx
+const handleViewportChange = useCallback((mode: ViewportMode) => {
+  setIframeContentHeight(0);   // reset primero
+  setViewportMode(mode);       // cambiar viewport después
+}, []);
+```
+
+El orden importa: ambos `setState` se batchean en el mismo render de React, así que el iframe se renderiza con height=0 y el nuevo width simultáneamente. Cuando el `ResizeObserver` mide, el body ya está colapsado y reporta la altura real.
+
+## Lo que aprendí
+
+**`transform: scale()` no afecta el layout.** Es solo visual. El iframe sigue ocupando su tamaño original en el DOM. Todo lo que envuelve al iframe necesita account for esto — el sizing del wrapper, la medición del contenedor, el manejo del overflow.
+
+**Los iframes inflan todo lo que pueden.** Un iframe de 1440px dentro de un contenedor con `overflow: hidden` y `min-w-0` igual puede inflar mediciones. Cuando la medición bottom-up falla, calcular top-down (desde `window.innerWidth` hacia abajo) es más confiable.
+
+**`scrollHeight` miente cuando el elemento es más grande que el contenido.** En un iframe con height fijo, el body se estira para llenarlo. Cualquier medición basada en `scrollHeight` refleja esa altura estirada, no el contenido real. Hay que medir los hijos individualmente.
+
+**El preview debe coincidir con la realidad.** Si el iframe renderiza a un ancho distinto al viewport real del admin, va a ver "bugs" que no existen. Usar `window.innerWidth` como ancho del iframe en modo desktop elimina esas señales falsas.
+
+El page builder terminó funcionando bien — sidebar colapsable que le da más espacio al preview, tres modos de viewport (desktop, tablet, mobile), indicador de zoom, y preview en vivo con draft mode. Pero el 80% del esfuerzo fue pelear con las trampas del iframe, no construir features. Si hay algo que me llevo es que los iframes son simples hasta que dejan de serlo.
