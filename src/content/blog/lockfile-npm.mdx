@@ -1,0 +1,269 @@
+---
+title: "El caso del lockfile perdido"
+description: "Por qué tu package-lock.json merece estar en el repo, y cómo dejar de romperlo sin querer cada vez que haces npm install."
+date: 2026-04-13
+tags: ["javascript", "node", "devops"]
+---
+
+## La escena del crimen
+
+Mitad de un sprint que tenía que salir rápido. Feature casi lista, pushes en verde, deploy agendado para la tarde. Y de la nada el pipeline se pone rojo en un paso que ni siquiera estaba tocando: **el escaneo de vulnerabilidades**. Decenas de CVEs nuevas apareciendo en dependencias que llevaban meses sin moverse.
+
+> "Pero si no cambiamos nada de código..."
+
+Exacto. Y ese era precisamente el problema. El lockfile **no estaba en el repo** — estaba ignorado —, así que cada vez que el pipeline corría `npm install` generaba un lockfile nuevo desde cero, resolviendo los rangos (`^`, `~`) del `package.json` contra lo que hubiera disponible en el registry **en ese instante**. Nuestro código no había cambiado, pero el árbol de dependencias que se instalaba sí: bastó con que una sub-dependencia transitiva publicara una versión con un CVE recién reportado para que el escáner empezara a gritar. El bloqueante no venía de lo que escribimos, venía de lo que dejamos resolver al azar en cada build.
+
+Si trabajas con JavaScript y esta escena te suena, bienvenido al club. El problema casi siempre tiene el mismo origen: **alguien no subió el lockfile**, o peor, **lo modificó sin darse cuenta**.
+
+Este artículo es la guía que me hubiera gustado tener ese día.
+
+## Primero: ¿qué diablos es un lockfile?
+
+Tu `package.json` es una **carta de deseos**. Dice "quiero express en alguna versión compatible con 4.x". Tu lockfile es la **factura de lo que realmente se instaló**: versiones exactas, hashes de integridad y el árbol completo de sub-dependencias.
+
+En `package.json`:
+
+```json
+{
+  "dependencies": {
+    "express": "^4.18.0",
+    "lodash": "~4.17.0",
+    "axios": "^1.6.0"
+  }
+}
+```
+
+Los `^` y `~` son **rangos**. Cada `npm install` *podría* resolver algo distinto.
+
+En `package-lock.json`:
+
+```json
+{
+  "express": "4.18.2",
+  "lodash": "4.17.21",
+  "axios": "1.6.7"
+}
+```
+
+Versiones **exactas** + hashes + todo el árbol. Determinismo puro.
+
+Esto aplica a todos los gestores del ecosistema Node:
+
+| Package Manager | Lockfile              | ¿Subirlo al repo? |
+| --------------- | --------------------- | ----------------- |
+| npm             | `package-lock.json`   | Siempre           |
+| yarn            | `yarn.lock`           | Siempre           |
+| pnpm            | `pnpm-lock.yaml`      | Siempre           |
+| bun             | `bun.lockb`           | Siempre           |
+
+> **Mito a destruir:** "El lockfile es demasiado grande y genera ruido en los PRs, mejor lo metemos en `.gitignore`." No. Ese "ruido" es información crítica. Un diff en el lockfile te dice exactamente qué cambió en tus dependencias. Si lo ignoras, navegas a ciegas.
+
+## Los 4 jinetes del Apocalipsis sin lockfile
+
+1. **Builds no reproducibles.** Dev A instala el lunes y le toca `lodash@4.17.20`. Dev B instala el miércoles y le llega `4.17.21`. El bug del Dev B no existe en la máquina del Dev A. CI resuelve una tercera combinación. Nadie puede reproducir nada.
+
+2. **Vulnerabilidades fantasma.** Sin lockfile, una sub-dependencia puede mutar entre deploys. ¿Recuerdas el incidente de `event-stream` en 2018? Un mantenedor inyectó código malicioso en una versión patch. Si tu lockfile estaba commiteado, no te tocó hasta que *tú* decidieras actualizar. Si no... sorpresa.
+
+3. **CI/CD impredecible.** Tu pipeline corre `npm install` en cada build. Sin lockfile, cada ejecución puede instalar versiones distintas. El deploy del jueves funciona, el del viernes no. ¿Qué cambió? Nada en *tu* código.
+
+4. **Auditoría imposible.** ¿Quieres saber qué hay en producción? Con lockfile: `git log --follow package-lock.json`. Sin lockfile: buena suerte revisando los logs del registry.
+
+## Pero... "yo sí subo el lockfile y aún así se rompe"
+
+Aquí es donde la mayoría de artículos se detienen. Pero la verdad es que **subir el lockfile es solo la mitad de la ecuación**. La otra mitad es *no romperlo accidentalmente en tu día a día*.
+
+El culpable principal: confundir `npm install` con `npm ci`. Parecen primos, pero se comportan como especies distintas.
+
+## `npm install` vs `npm ci`: la diferencia que nadie te explicó bien
+
+|                        | `npm install`                              | `npm ci`                              |
+| ---------------------- | ------------------------------------------ | ------------------------------------- |
+| ¿Lee el lockfile?      | Sí, pero puede **modificarlo**             | Sí, es la **fuente de verdad**        |
+| ¿Modifica el lockfile? | Sí, si hay diferencias con `package.json`  | Nunca. Si hay diferencia, **falla**   |
+| ¿Borra `node_modules`? | No, hace merge                             | Sí, borra todo y reinstala de cero    |
+| Velocidad              | Variable                                   | Más rápido (sin resolución de rangos) |
+| Ideal para             | Agregar/actualizar deps                    | CI, builds, setup inicial             |
+
+El punto clave: `npm install` es una operación de **escritura**. Puede (y va a) modificar tu `package-lock.json` si detecta que puede resolver versiones más nuevas dentro de los rangos permitidos, o si la versión de npm cambió. `npm ci` es de **solo lectura**: instala exactamente lo que el lockfile dice, o explota intentando.
+
+## Escenarios reales donde se rompe todo
+
+### Escenario 1: "solo hice npm install"
+
+```bash
+$ git pull origin main
+Already up to date.
+
+$ npm install
+added 3 packages, updated 47 packages in 12s
+
+$ git status
+modified: package-lock.json   # ← 2.400 líneas cambiadas 😱
+
+# Dev piensa: "mmm, será normal" y hace commit
+$ git add . && git commit -m "fix: stuff"
+# Acaba de subir versiones distintas de 47 dependencias
+# sin que nadie lo revisara
+```
+
+¿Qué pasó? Dev tenía npm v10.2, el lockfile se generó con npm v10.5. Las versiones de npm no resuelven los árboles exactamente igual. Resultado: el lockfile se regeneró parcialmente con un `npm install` que no debió tocar nada.
+
+### Escenario 2: versiones fantasma en CI
+
+```yaml
+# .github/workflows/build.yml
+steps:
+  - uses: actions/setup-node@v4
+    with:
+      node-version: '20'
+
+  - run: npm install        # ← AQUÍ ESTÁ EL BUG
+  - run: npm run build
+  - run: npm test
+```
+
+Ese `npm install` en CI puede generar un lockfile ligeramente distinto al que el dev commiteó. Y como CI no commitea de vuelta, la inconsistencia vive escondida hasta que algo explota.
+
+### Escenario 3: el .gitignore traicionero
+
+```bash
+# Alguien copió esto de un template de 2017
+node_modules/
+package-lock.json    # ← NO
+yarn.lock            # ← TAMPOCO
+dist/
+```
+
+Hay cientos de templates y tutoriales viejos que incluyen el lockfile en `.gitignore`. Esto era "discutible" hace 7 años. Hoy no hay debate: **el lockfile se commitea, siempre**.
+
+## La guía definitiva: cómo usar npm sin destruir el lockfile
+
+### Regla 1 — Para instalar deps existentes, usa `npm ci`
+
+```bash
+# ✅ Correcto — respeta el lockfile al pie de la letra
+$ npm ci
+
+# ❌ Incorrecto — puede modificar el lockfile
+$ npm install
+```
+
+`npm ci` borra `node_modules` completamente y reinstala todo desde el lockfile. Es más rápido porque no necesita resolver rangos. Si el lockfile y el `package.json` no concuerdan, **falla con error** en lugar de "arreglarlo" silenciosamente.
+
+### Regla 2 — Para agregar un paquete nuevo, `npm install <pkg>`
+
+```bash
+# Instala el paquete y actualiza package.json + lockfile
+$ npm install zod
+
+# Revisa qué cambió en el lockfile
+$ git diff package-lock.json | head -50
+
+# Commitea ambos archivos juntos
+$ git add package.json package-lock.json
+$ git commit -m "deps: add zod for schema validation"
+```
+
+Tip: siempre haz commit de `package.json` y `package-lock.json` **juntos** en el mismo commit. Si ves cambios en el lockfile que no corresponden a lo que instalaste, algo raro está pasando.
+
+### Regla 3 — Para actualizar deps, hazlo explícito
+
+```bash
+# Ver qué tiene updates disponibles
+$ npm outdated
+
+# Actualizar un paquete específico
+$ npm update express
+
+# Actualizar todo (dentro de los rangos de semver)
+$ npm update
+
+# Saltar a un major nuevo (rompe semver range)
+$ npm install express@5
+```
+
+### Regla 4 — En CI/CD, siempre `npm ci`
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+  - uses: actions/setup-node@v4
+    with:
+      node-version: '20'
+      cache: 'npm'         # ← cachea node_modules entre runs
+
+  - run: npm ci             # ← NUNCA npm install aquí
+  - run: npm run build
+  - run: npm test
+```
+
+### Regla 5 — Alinea la versión de npm en el equipo
+
+En `package.json`:
+
+```json
+{
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
+```
+
+Combinado con un `.nvmrc` en la raíz del proyecto:
+
+```text
+20.11.0
+```
+
+Así, cuando alguien hace `nvm use` al entrar al proyecto, todos quedan en la misma versión de Node (y por extensión, la misma versión de npm bundled). Las diferencias entre versiones de npm son la causa silenciosa número uno de lockfiles mutantes.
+
+## Cheatsheet: ¿qué comando uso?
+
+| Situación                        | Comando                             | ¿Toca el lockfile? |
+| -------------------------------- | ----------------------------------- | ------------------ |
+| Clonar repo / cambiar rama       | `npm ci`                            | No                 |
+| Agregar nueva dependencia        | `npm install zod`                   | Sí (esperado)      |
+| Eliminar dependencia             | `npm uninstall lodash`              | Sí (esperado)      |
+| Actualizar un paquete            | `npm update express`                | Sí (esperado)      |
+| Pipeline de CI/CD                | `npm ci`                            | No                 |
+| Refrescar node_modules           | `rm -rf node_modules && npm ci`     | No                 |
+| Ver si todo resuelve             | `npm install --dry-run`             | No                 |
+
+## Bonus: protege el lockfile con un git hook
+
+Si quieres una red de seguridad para que nadie suba cambios accidentales al lockfile sin haber tocado `package.json`, puedes usar un pre-commit hook con Husky:
+
+```bash
+# Instalar husky
+npx husky init
+```
+
+Y en `.husky/pre-commit`:
+
+```bash
+#!/bin/sh
+
+# Si el lockfile cambió pero package.json no, advertir
+LOCK_CHANGED=$(git diff --cached --name-only | grep "package-lock.json")
+PKG_CHANGED=$(git diff --cached --name-only | grep "package.json$")
+
+if [ -n "$LOCK_CHANGED" ] && [ -z "$PKG_CHANGED" ]; then
+  echo "⚠️  package-lock.json cambió sin cambios en package.json"
+  echo "   ¿Hiciste 'npm install' en vez de 'npm ci'?"
+  echo "   Usa 'git commit --no-verify' si estás seguro."
+  exit 1
+fi
+```
+
+No es infalible (hay casos legítimos donde el lockfile cambia solo), pero atrapa el 90% de los accidentes.
+
+## TL;DR
+
+Las 3 verdades del lockfile:
+
+1. El lockfile **siempre** se commitea. Punto.
+2. En tu día a día y en CI, usa `npm ci` para instalar. Usa `npm install <pkg>` solo cuando estés agregando o cambiando una dependencia de forma intencional.
+3. Alinea versiones de Node y npm en el equipo con `engines` + `.nvmrc`.
+
+El lockfile no es basura generada. Es un **contrato** entre tu equipo, tu CI y tu producción que garantiza que todos están ejecutando exactamente el mismo código. Trátalo con el respeto que merece.
