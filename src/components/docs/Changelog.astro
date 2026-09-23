@@ -1,0 +1,165 @@
+---
+type ChangeKind = 'added' | 'changed' | 'fixed' | 'ci';
+
+interface Change {
+  kind: ChangeKind;
+  text: string;
+}
+
+interface Release {
+  version: string;
+  date: string; // YYYY-MM-DD
+  changes: Change[];
+}
+
+interface Props {
+  releases: Release[];
+  repo?: string; // ej: 'jee4nc/taghound' para enlazar cada versión a su release
+}
+
+const { releases, repo } = Astro.props;
+
+const labels: Record<ChangeKind, string> = {
+  added: 'Añadido',
+  changed: 'Cambiado',
+  fixed: 'Corregido',
+  ci: 'CI',
+};
+
+const formatDate = (iso: string) =>
+  new Date(`${iso}T12:00:00`).toLocaleDateString('es-CL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+---
+
+<ol class="changelog">
+  {releases.map((r, i) => (
+    <li class="release">
+      <div class="release-head">
+        {repo ? (
+          <a class="release-version" href={`https://github.com/${repo}/releases/tag/${r.version}`}>{r.version}</a>
+        ) : (
+          <span class="release-version">{r.version}</span>
+        )}
+        {i === 0 && <span class="release-latest">latest</span>}
+        <time class="release-date" datetime={r.date}>{formatDate(r.date)}</time>
+      </div>
+      <ul class="release-changes">
+        {r.changes.map((c) => (
+          <li>
+            <span class={`kind kind-${c.kind}`}>{labels[c.kind]}</span>
+            <span set:html={c.text} />
+          </li>
+        ))}
+      </ul>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .changelog {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    border-left: 1px solid var(--color-border);
+  }
+
+  .release {
+    position: relative;
+    padding: 0 0 1.75rem 1.5rem;
+  }
+
+  .release::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 0.45rem;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--color-bg);
+    border: 1px solid var(--color-cyan);
+  }
+
+  .release:first-child::before {
+    background: var(--color-cyan);
+    box-shadow: 0 0 10px var(--color-cyan-dim);
+  }
+
+  .release-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .release-version {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  a.release-version:hover {
+    color: var(--color-cyan);
+  }
+
+  .release-latest {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-cyan);
+    background: var(--color-cyan-dim);
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+  }
+
+  .release-date {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-muted);
+  }
+
+  .release-changes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .release-changes li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .kind {
+    flex-shrink: 0;
+    min-width: 5.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .kind-added { color: var(--color-cyan); }
+  .kind-changed { color: var(--color-violet); }
+  .kind-fixed { color: #fbbf24; }
+  .kind-ci { color: var(--color-muted); }
+
+  @media (max-width: 560px) {
+    .release-changes li {
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+  }
+</style>

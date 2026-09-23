@@ -3,6 +3,7 @@ import Docs from '../../layouts/Docs.astro';
 import Terminal from '../../components/docs/Terminal.astro';
 import InstallTabs from '../../components/docs/InstallTabs.astro';
 import FlagsTable from '../../components/docs/FlagsTable.astro';
+import Changelog from '../../components/docs/Changelog.astro';
 
 const sidebar = [
   {
@@ -17,13 +18,17 @@ const sidebar = [
     title: 'Referencia',
     links: [
       { label: 'Flags y opciones', href: '#flags' },
+      { label: 'Atajos de teclado', href: '#keybindings' },
       { label: 'JSON mode', href: '#json' },
-      { label: 'Node awareness', href: '#node-awareness' },
+      { label: 'Changelog', href: '#changelog' },
     ],
   },
   {
     title: 'Guías',
     links: [
+      { label: 'Node awareness', href: '#node-awareness' },
+      { label: 'Peer dependencies', href: '#peers' },
+      { label: 'Dependencias no usadas', href: '#unused' },
       { label: 'Build from source', href: '#build' },
     ],
   },
@@ -34,17 +39,23 @@ const toc = [
   { label: 'Instalación', href: '#instalacion' },
   { label: 'Primer uso', href: '#quickstart' },
   { label: 'Flags', href: '#flags' },
+  { label: 'Atajos de teclado', href: '#keybindings' },
   { label: 'Node awareness', href: '#node-awareness' },
+  { label: 'Peer dependencies', href: '#peers' },
+  { label: 'No usadas', href: '#unused' },
+  { label: 'JSON mode', href: '#json' },
+  { label: 'Build from source', href: '#build' },
+  { label: 'Changelog', href: '#changelog' },
 ];
 
 const installTabs = [
   {
     label: 'macOS',
-    lines: ['# via Homebrew', 'brew tap jee4nc/tap', 'brew install packwatch'],
+    lines: ['# via Homebrew (instala node como dependencia)', 'brew install jee4nc/tap/packwatch'],
   },
   {
     label: 'Linux',
-    lines: ['# via Homebrew', 'brew tap jee4nc/tap', 'brew install packwatch', '# o .deb', 'sudo dpkg -i packwatch_*.deb'],
+    lines: ['# via Homebrew', 'brew install jee4nc/tap/packwatch', '# o .deb (Debian/Ubuntu)', 'sudo dpkg -i packwatch_*.deb', '# o .rpm (Fedora/RHEL)', 'sudo rpm -i packwatch_*.rpm'],
   },
   {
     label: 'Windows',
@@ -53,21 +64,118 @@ const installTabs = [
 ];
 
 const flags = [
-  { flag: '--prod-only', type: 'bool', description: 'Solo revisa dependencias de producción' },
-  { flag: '--dev-only', type: 'bool', description: 'Solo revisa dependencias de desarrollo' },
-  { flag: '--json', type: 'bool', description: 'Output en formato JSON (sin TUI interactivo)' },
-  { flag: '--no-color', type: 'bool', description: 'Desactiva colores en el output' },
-  { flag: '--version, -v', type: '—', description: 'Muestra la versión instalada' },
+  { flag: '--prod-only', type: 'bool', description: 'Solo revisa dependencias de producción (excluyente con --dev-only)' },
+  { flag: '--dev-only', type: 'bool', description: 'Solo revisa dependencias de desarrollo (excluyente con --prod-only)' },
+  { flag: '--unused', type: 'bool', description: 'Detecta dependencias no usadas en el código y permite desinstalarlas (combinable con --json)' },
+  { flag: '--json', type: 'bool', description: 'Output en JSON por stdout, sin TUI (el progreso va a stderr)' },
+  { flag: '--no-color', type: 'bool', description: 'Desactiva colores y emojis (equivale a NO_COLOR=1)' },
+  { flag: '--version', type: 'bool', description: 'Muestra versión, commit y fecha de build, y sale' },
   { flag: '--help, -h', type: '—', description: 'Muestra la ayuda' },
+];
+
+const keybindings = [
+  { flag: '↑ / k, ↓ / j', type: 'selector', description: 'Navegar' },
+  { flag: 'space / tab', type: 'selector', description: 'Marcar / desmarcar paquete' },
+  { flag: 'a', type: 'selector', description: 'Marcar todos' },
+  { flag: 'p', type: 'selector', description: 'Solo updates patch' },
+  { flag: 'm', type: 'selector', description: 'Patch + minor' },
+  { flag: 'v', type: 'selector', description: 'Expandir vulnerabilidades (cuando hay más de 3)' },
+  { flag: 'enter', type: 'selector', description: 'Confirmar selección' },
+  { flag: 'q / esc / ctrl+c', type: 'selector', description: 'Salir' },
+  { flag: 'y · n / q / esc', type: 'confirmación', description: 'Ejecutar · cancelar' },
 ];
 
 const terminalCommands = [
   'packwatch',
-  '# packwatch v1.0.0',
+  '# 📦 packwatch 0.1.9',
   '# Node 20.11.0 from .nvmrc',
-  '# Lockfile v3 — 42 direct deps',
-  '# Checking npm registry...',
-  '# 5 updates · 2 vulnerable',
+  '# 🔒 Lockfile v3 — 42 direct dependencies',
+  '# 🔍 Checking npm registry for 42 packages...',
+  '# 🛡️  Checking security advisories for 42 packages...',
+  '# 📊 5 updates available · 2 vulnerable (1 HIGH, 1 MEDIUM)',
+];
+
+const releases = [
+  {
+    version: 'v0.1.9',
+    date: '2026-09-23',
+    changes: [
+      { kind: 'added', text: 'Updates coordinados para paquetes con peer deps mutuos (ej. <code>react</code> + <code>react-dom</code>): se sugieren juntos, se marcan <em>update together</em> y se auto-seleccionan los pares.' },
+      { kind: 'added', text: '<code>@types/node</code> se mantiene en el major de Node del proyecto (<code>engines.node</code> o el Node activo).' },
+      { kind: 'fixed', text: 'Los tokens de <code>.npmrc</code> se resuelven subiendo por la ruta del registry, como npm — arregla registries privados tipo JFrog.' },
+    ],
+  },
+  {
+    version: 'v0.1.8',
+    date: '2026-09-23',
+    changes: [
+      { kind: 'fixed', text: 'Versiones parciales en <code>.nvmrc</code>/<code>.node-version</code> (ej. <code>20</code>) se resuelven a una release real.' },
+      { kind: 'fixed', text: '<code>npm install</code> mantiene el estilo de rango declarado (<code>^</code>, <code>~</code>, exacto).' },
+      { kind: 'fixed', text: 'El lockfile ignora las instalaciones locales de workspaces.' },
+      { kind: 'fixed', text: 'Fetch al registry más robusto; nunca sugiere versiones deprecadas ni por encima de <code>latest</code>.' },
+    ],
+  },
+  {
+    version: 'v0.1.7',
+    date: '2026-09-23',
+    changes: [
+      { kind: 'fixed', text: 'En <code>--json</code>, stdout solo lleva JSON y el progreso va a stderr.' },
+      { kind: 'fixed', text: 'Las vulnerabilidades ya no se marcan como resueltas cuando falla la consulta a OSV.' },
+      { kind: 'fixed', text: 'Paquetes sin versión compatible más nueva se muestran como <em>held back</em> en vez de ofrecer un update que rompería.' },
+      { kind: 'fixed', text: 'Evaluación correcta de rangos semver x-range, exactos y con guion.' },
+      { kind: 'ci', text: 'GitHub App token en vez de PATs expirados.' },
+    ],
+  },
+  {
+    version: 'v0.1.6',
+    date: '2026-03-30',
+    changes: [
+      { kind: 'changed', text: '<code>--unused</code> resuelve los nombres cortos de plugins/configs de ESLint — menos falsos positivos.' },
+    ],
+  },
+  {
+    version: 'v0.1.5',
+    date: '2026-03-30',
+    changes: [
+      { kind: 'added', text: 'Detección de conflictos de peer dependencies, con avisos en el TUI.' },
+    ],
+  },
+  {
+    version: 'v0.1.4',
+    date: '2026-03-30',
+    changes: [
+      { kind: 'added', text: 'Flag <code>--unused</code> para detectar y desinstalar dependencias no usadas, con TUI propio y salida <code>--json</code>.' },
+    ],
+  },
+  {
+    version: 'v0.1.3',
+    date: '2026-03-29',
+    changes: [
+      { kind: 'ci', text: 'Primera versión con GitHub Release y artefactos (Homebrew, Scoop, .deb, .rpm, binarios).' },
+    ],
+  },
+  {
+    version: 'v0.1.2',
+    date: '2026-03-29',
+    changes: [
+      { kind: 'ci', text: '<code>setup-go</code> pasa a v6.' },
+    ],
+  },
+  {
+    version: 'v0.1.1',
+    date: '2026-03-29',
+    changes: [
+      { kind: 'ci', text: 'Mejora del auto-tagging en GitHub Actions.' },
+    ],
+  },
+  {
+    version: 'v0.1.0',
+    date: '2026-03-29',
+    changes: [
+      { kind: 'added', text: 'Primera versión: TUI para elegir updates, detección de Node, soporte de <code>.npmrc</code>, lockfile v1/v2/v3, fetch concurrente y chequeo de seguridad.' },
+      { kind: 'added', text: 'Flags <code>--prod-only</code>, <code>--dev-only</code>, <code>--json</code>, <code>--no-color</code> y <code>--version</code>.' },
+    ],
+  },
 ];
 ---
 
@@ -76,22 +184,23 @@ const terminalCommands = [
   description="TUI interactivo para gestionar actualizaciones de dependencias npm. Detecta vulnerabilidades, respeta tu versión de Node, y te deja elegir qué actualizar."
   lang="Go"
   type="TUI"
-  version="v1.0.0"
+  version="v0.1.9"
   sidebar={sidebar}
   toc={toc}
 >
   <h2 id="que-hace">¿Qué hace packwatch?</h2>
   <p>
-    Lee tu <code>package-lock.json</code>, consulta el npm registry de forma concurrente, detecta vulnerabilidades via GitHub Advisory Database, y presenta un TUI interactivo para elegir qué actualizar.
+    Lee tu <code>package-lock.json</code>, consulta el npm registry de forma concurrente, detecta vulnerabilidades vía la base de datos <a href="https://osv.dev">OSV</a> (incluye GitHub Security Advisories), y presenta un TUI interactivo para elegir qué actualizar.
   </p>
   <ul>
-    <li>Detecta tu versión de Node (<code>.nvmrc</code> → <code>.node-version</code> → <code>node --version</code>)</li>
-    <li>Lee <code>.npmrc</code> para registries custom y tokens</li>
+    <li>Detecta tu versión de Node (<code>.nvmrc</code> → <code>.node-version</code> → <code>node --version</code>). Una versión parcial (ej. <code>20</code>) se resuelve a tu <code>node</code> activo si es de esa línea, o a la última release de esa línea en nodejs.org</li>
+    <li>Lee tu <code>.npmrc</code> de usuario y de proyecto: <code>registry</code>, registries por scope (<code>@scope:registry=</code>) y <code>_authToken</code> con expansión de <code>{'${ENV_VAR}'}</code>. Un token de una ruta padre aplica a todos los registries bajo ella, igual que en npm</li>
     <li>Parsea <code>package-lock.json</code> v1/v2/v3 y <code>package.json</code></li>
     <li>Fetch concurrente al registry para versiones nuevas</li>
-    <li>Revisa advisories de seguridad (GitHub Advisory Database)</li>
+    <li>Revisa advisories de seguridad vía OSV</li>
     <li>TUI interactivo para seleccionar paquetes a actualizar</li>
-    <li>Genera y ejecuta <code>npm install</code> separando prod/dev</li>
+    <li>Genera y ejecuta <code>npm install</code> separando prod/dev y manteniendo el estilo de rango de cada dependencia (<code>^</code>/<code>~</code>/exacta)</li>
+    <li>Detecta dependencias que ya no usas con <code>--unused</code></li>
   </ul>
 
   <Terminal title="terminal — packwatch demo" commands={terminalCommands} />
@@ -116,6 +225,10 @@ const terminalCommands = [
   <h2 id="flags">Flags disponibles</h2>
   <FlagsTable flags={flags} />
 
+  <h2 id="keybindings">Atajos de teclado</h2>
+  <FlagsTable flags={keybindings} headers={['Tecla', 'Pantalla', 'Acción']} />
+  <p>El TUI de <code>--unused</code> usa los mismos atajos, sin <code>p</code>, <code>m</code> ni <code>v</code>.</p>
+
   <h2 id="node-awareness">Node version awareness</h2>
   <p>
     Cuando la última versión de un paquete requiere un Node más nuevo del que tienes activo, packwatch no la sugiere. En vez de eso, recorre versiones de la más nueva a la más antigua y sugiere la mejor compatible con tu Node:
@@ -125,25 +238,70 @@ const terminalCommands = [
     title="terminal — node awareness"
     commands={[
       'packwatch',
-      '# next 14.2.3 → 15.1.0',
-      '# latest requires Node >=18.18.0',
-      '# suggesting 14.2.28 instead',
+      '# next  14.2.3 → 14.2.28  patch',
+      '#   ⚠️  latest (15.1.0) requires Node >=18.18.0; suggesting 14.2.28 instead',
+    ]}
+  />
+
+  <p>Si ya estás en la versión compatible más nueva, el paquete aparece como <em>held back</em> en vez de ofrecer un update que rompería:</p>
+
+  <Terminal
+    title="terminal — held back"
+    commands={[
+      'packwatch',
+      '# ⏸  1 held back by Node/peer constraints:',
+      '#   • eslint: latest (10.11.0) requires Node >=20.19.0; already on newest compatible version',
+    ]}
+  />
+
+  <p>
+    <code>@types/node</code> se mantiene en el major de Node que apunta tu proyecto: el mínimo de <code>engines.node</code> o, si no está definido, tu Node activo.
+    Si <code>engines.node</code> no acepta tu Node activo, packwatch lo advierte al inicio.
+  </p>
+
+  <h2 id="peers">Peer dependencies</h2>
+  <p>
+    Las <code>peerDependencies</code> se revisan en ambas direcciones y sobre todo el plan de updates. Paquetes que se fijan mutuamente (ej. <code>vitest</code> y <code>@vitest/coverage-v8</code>, <code>react</code> y <code>react-dom</code>) se evalúan juntos y se marcan <em>update together</em>: seleccionar uno selecciona a sus pares, y packwatch agrega cualquier par faltante antes de correr <code>npm install</code>.
+  </p>
+  <p>Nunca sugiere versiones deprecadas ni por encima del dist-tag <code>latest</code>.</p>
+
+  <h2 id="unused">Dependencias no usadas</h2>
+  <p>
+    <code>packwatch --unused</code> escanea tu código (<code>import</code>/<code>require</code>, incluidos los nombres cortos de plugins de ESLint) y lista las dependencias directas que no se usan. Puedes elegir cuáles desinstalar desde el TUI.
+  </p>
+
+  <Terminal
+    title="terminal — unused"
+    commands={[
+      'packwatch --unused',
+      '# 📂 Scanned 120 files — 42 direct dependencies',
+      '# 📊 3 unused dependencies found',
     ]}
   />
 
   <h2 id="json">JSON mode</h2>
   <p>
-    Usa <code>--json</code> para CI pipelines o scripting:
+    Usa <code>--json</code> para CI pipelines o scripting. Stdout contiene solo el documento JSON; el progreso y los mensajes van a stderr:
   </p>
 
   <Terminal
     title="terminal — json mode"
     commands={[
       'packwatch --json | jq ".packages[]"',
-      '# Filter vulnerable packages',
+      '# Solo paquetes vulnerables',
       'packwatch --json | jq ".packages[] | select(.vulnCount > 0)"',
+      '# Solo updates major',
+      'packwatch --json | jq \'.packages[] | select(.updateType=="major")\'',
+      '# Dependencias no usadas',
+      'packwatch --unused --json',
     ]}
   />
+
+  <p>
+    El documento trae <code>packwatchVersion</code>, <code>nodeVersion</code> y <code>packages[]</code>. Cada paquete incluye <code>name</code>, <code>installed</code>, <code>available</code>, <code>updateType</code>, <code>isDev</code>,
+    <code>nodeWarning</code>, <code>peerWarning</code>, <code>compatVersion</code>, <code>requiresWith</code>, <code>vulnCount</code>, <code>vulnSeverity</code>, <code>vulnFixedByUpdate</code> y <code>vulnerabilities[]</code>.
+    Con <code>--unused</code>: <code>packwatchVersion</code>, <code>unusedPackages[]</code>, <code>totalDependencies</code> y <code>scannedFiles</code>.
+  </p>
 
   <h2 id="build">Build from source</h2>
   <Terminal
@@ -151,7 +309,15 @@ const terminalCommands = [
     commands={[
       'make build',
       'make test',
+      '# fmt + vet (reescribe archivos con gofmt -w)',
       'make lint',
+      '# Instalar en $GOPATH/bin',
+      'make install',
+      '# Cross-compile a bin/',
+      'make release',
     ]}
   />
+
+  <h2 id="changelog">Changelog</h2>
+  <Changelog releases={releases} repo="jee4nc/packwatch" />
 </Docs>

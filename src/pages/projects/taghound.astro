@@ -3,6 +3,7 @@ import Docs from '../../layouts/Docs.astro';
 import Terminal from '../../components/docs/Terminal.astro';
 import InstallTabs from '../../components/docs/InstallTabs.astro';
 import FlagsTable from '../../components/docs/FlagsTable.astro';
+import Changelog from '../../components/docs/Changelog.astro';
 
 const sidebar = [
   {
@@ -19,12 +20,13 @@ const sidebar = [
       { label: 'Flags y opciones', href: '#flags' },
       { label: 'Profiles', href: '#profiles' },
       { label: 'Build from source', href: '#build' },
+      { label: 'Changelog', href: '#changelog' },
     ],
   },
   {
     title: 'Guías',
     links: [
-      { label: 'Build from source', href: '#build' },
+      { label: 'Deployments (Bitbucket)', href: '#deploys' },
     ],
   },
 ];
@@ -35,17 +37,19 @@ const toc = [
   { label: 'Primer uso', href: '#quickstart' },
   { label: 'Flags', href: '#flags' },
   { label: 'Profiles', href: '#profiles' },
+  { label: 'Deployments', href: '#deploys' },
   { label: 'Build from source', href: '#build' },
+  { label: 'Changelog', href: '#changelog' },
 ];
 
 const installTabs = [
   {
     label: 'macOS',
-    lines: ['# via Homebrew', 'brew tap jee4nc/tap', 'brew install taghound'],
+    lines: ['# via Homebrew', 'brew install jee4nc/tap/taghound'],
   },
   {
     label: 'Linux',
-    lines: ['# via Homebrew', 'brew tap jee4nc/tap', 'brew install taghound', '# o .deb', 'sudo dpkg -i taghound_*.deb'],
+    lines: ['# via Homebrew', 'brew install jee4nc/tap/taghound', '# o .deb (Debian/Ubuntu)', 'sudo dpkg -i taghound_*.deb', '# o .rpm (Fedora/RHEL)', 'sudo rpm -i taghound_*.rpm'],
   },
   {
     label: 'Windows',
@@ -55,7 +59,10 @@ const installTabs = [
 
 const flags = [
   { flag: '--dirty, -d', type: 'bool', description: 'Muestra solo orphan tags (tags sin branch asociado)' },
-  { flag: '--profile, -p', type: 'string', description: 'Usa un profile específico para este run sin cambiar el default' },
+  { flag: '--profile', type: 'string', description: 'Usa un profile específico para este run sin cambiar el activo (también aplica a deploys)' },
+  { flag: 'deploys', type: 'cmd', description: 'Muestra qué hay desplegado por país/ambiente (Bitbucket Pipelines)' },
+  { flag: 'deploys --refresh, -r', type: 'bool', description: 'Ignora el caché (5 min) y vuelve a consultar Bitbucket' },
+  { flag: 'deploys --envs', type: 'bool', description: 'Lista los environments de Bitbucket definidos en el repo' },
   { flag: '--version, -v', type: '—', description: 'Muestra la versión instalada' },
   { flag: '--help, -h', type: '—', description: 'Muestra la ayuda' },
 ];
@@ -88,14 +95,113 @@ const terminalCommands = [
   '#      Message:    Merged in main (pull request #42)',
   '#      Tags:       v1.0.8, v1.0.7, v1.0.6, v1.0.5, v1.0.4, v1.0.3, v1.0.2, v1.0.1, v1.0.0',
 ];
+
+const deploysOutput = [
+  'taghound deploys',
+  '# ',
+  '#   TagHound — Deployments  bitbucket.org/acme/push-config',
+  '# ───────────────────────────────────────────────────────',
+  '# ',
+  '#   Latest release:  origin/release-3.1  →  🏷️  v3.1.0',
+  '# ',
+  '#   CL',
+  '#      QA    release-3.1   v3.1.0    a1b2c3d  2026-09-20 14:02',
+  '#            ✓ latest  pipeline #1410',
+  '#      PROD  release-3.0   v3.0.1+2  f4e5d6c  2026-09-10 10:31',
+  '#            ⚠ newer release origin/release-3.1 not deployed  pipeline #1398',
+];
+
+const releases = [
+  {
+    version: 'v0.1.9',
+    date: '2026-09-23',
+    changes: [
+      { kind: 'fixed', text: '<code>deploys</code> consulta Bitbucket filtrando por UUID de environment y ordenando por fecha de término — antes la API real respondía 400.' },
+      { kind: 'added', text: 'Ambientes nunca desplegados se muestran como <em>never deployed — N pipelines stopped before this step</em> cuando el paso manual no se ejecutó.' },
+      { kind: 'added', text: 'Un deploy a PROD desde un branch que no es de release se marca en rojo. En QA se considera normal.' },
+      { kind: 'changed', text: 'Se ignoran tags fuera de las líneas de release (ej. <code>v3950.3950.1</code>), se ocultan países sin ambientes en el repo y <code>lookback</code> sube de 40 a 200. El caché anterior se invalida.' },
+    ],
+  },
+  {
+    version: 'v0.1.8',
+    date: '2026-09-23',
+    changes: [
+      { kind: 'fixed', text: 'Errores de la API de Bitbucket accionables: 401 sugiere revisar el token y <code>BITBUCKET_USERNAME</code>, 403 indica el scope faltante, 404 indica repo no encontrado o inaccesible.' },
+    ],
+  },
+  {
+    version: 'v0.1.7',
+    date: '2026-09-23',
+    changes: [
+      { kind: 'ci', text: 'La publicación a Homebrew y Scoop usa un token de GitHub App. Sin cambios en el CLI.' },
+    ],
+  },
+  {
+    version: 'v0.1.6',
+    date: '2026-09-23',
+    changes: [
+      { kind: 'added', text: 'Comando <code>taghound deploys</code>: último deploy exitoso por país en QA/PROD de Bitbucket Pipelines, ubicado frente a tus branches y tags de release.' },
+      { kind: 'added', text: '<code>deploys --envs</code> para listar environments y <code>-r, --refresh</code> para saltarse el caché de 5 minutos.' },
+      { kind: 'added', text: '<code>config country set/delete</code> con plantillas <code>{slug}</code>, <code>{country}</code>, <code>{COUNTRY}</code> y <code>{workspace}</code>.' },
+      { kind: 'added', text: 'Auth con <code>BITBUCKET_TOKEN</code> (y <code>BITBUCKET_USERNAME</code> opcional). <code>config show</code> muestra los ambientes configurados.' },
+    ],
+  },
+  {
+    version: 'v0.1.5',
+    date: '2026-04-07',
+    changes: [
+      { kind: 'added', text: 'Atajo <code>-d</code> para <code>--dirty</code>.' },
+      { kind: 'changed', text: '<code>--dirty</code> muestra solo los tags huérfanos (antes los agregaba al final del listado normal).' },
+      { kind: 'fixed', text: 'Un comando desconocido ahora da error <em>unknown command</em> en vez de ejecutar el tracker.' },
+    ],
+  },
+  {
+    version: 'v0.1.4',
+    date: '2026-04-06',
+    changes: [
+      { kind: 'ci', text: 'Mejora del workflow de release para resolver la tag a publicar.' },
+    ],
+  },
+  {
+    version: 'v0.1.3',
+    date: '2026-04-06',
+    changes: [
+      { kind: 'changed', text: 'Manejo de errores de configuración más robusto (funciona aunque no se pueda determinar el home) y mensajes más claros.' },
+      { kind: 'ci', text: 'Auto-tag de patch al mergear un PR a main.' },
+    ],
+  },
+  {
+    version: 'v0.1.2',
+    date: '2026-03-27',
+    changes: [
+      { kind: 'ci', text: 'Ajuste del token del workflow de auto-tagging.' },
+    ],
+  },
+  {
+    version: 'v0.1.1',
+    date: '2026-03-27',
+    changes: [
+      { kind: 'ci', text: 'Auto-tagging para branches de release.' },
+    ],
+  },
+  {
+    version: 'v0.1.0',
+    date: '2026-03-27',
+    changes: [
+      { kind: 'added', text: 'Primera versión: sincroniza el remoto, detecta branches <code>release-X.Y</code> y tags <code>vX.Y.Z</code>, los ordena por semver y muestra commit, autor y mensaje.' },
+      { kind: 'added', text: 'Profiles (<code>config list/show/set/use/delete</code>), <code>--dirty</code> y <code>--profile</code>.' },
+      { kind: 'added', text: 'Distribución por Homebrew, Scoop, .deb/.rpm y binarios para linux/darwin/windows × amd64/arm64.' },
+    ],
+  },
+];
 ---
 
 <Docs
   title="taghound"
-  description="CLI que muestra el estado actual de releases en tu repositorio Git. Branches, tags y versiones ordenadas por semver — todo en un solo comando."
+  description="CLI que muestra el estado de releases en tu repositorio Git — branches y tags ordenados por semver — y qué versión está realmente desplegada en cada ambiente de Bitbucket Pipelines."
   lang="Go"
   type="CLI"
-  version="v0.1.5"
+  version="v0.1.9"
   sidebar={sidebar}
   toc={toc}
 >
@@ -110,6 +216,7 @@ const terminalCommands = [
     <li>Ordena tags por semver y muestra el último release primero</li>
     <li>Detalla commit, autor y fecha de cada branch</li>
     <li>Modo <code>--dirty</code> muestra solo orphan tags (tags sin branch asociado)</li>
+    <li><code>taghound deploys</code> muestra el último deploy exitoso por país/ambiente en Bitbucket Pipelines y lo ubica en tu historial de releases — branch, tag y si hay algo más nuevo sin desplegar</li>
   </ul>
 
   <Terminal title="terminal — taghound demo" commands={terminalCommands} />
@@ -122,9 +229,12 @@ const terminalCommands = [
     Descarga desde la <a href="https://github.com/jee4nc/taghound/releases">página de Releases</a> el binario para tu plataforma:
   </p>
   <ul>
-    <li><code>darwin-arm64</code> — macOS Apple Silicon</li>
-    <li><code>linux-amd64</code> — Linux x86_64</li>
-    <li><code>windows-amd64</code> — Windows x86_64</li>
+    <li><code>taghound_darwin_arm64.tar.gz</code> — macOS Apple Silicon</li>
+    <li><code>taghound_darwin_amd64.tar.gz</code> — macOS Intel</li>
+    <li><code>taghound_linux_amd64.tar.gz</code> — Linux x86_64</li>
+    <li><code>taghound_linux_arm64.tar.gz</code> — Linux ARM64</li>
+    <li><code>taghound_windows_amd64.zip</code> — Windows x86_64</li>
+    <li><code>taghound_windows_arm64.zip</code> — Windows ARM64</li>
   </ul>
 
   <h2 id="quickstart">Primer uso</h2>
@@ -195,6 +305,9 @@ const terminalCommands = [
       '#   Tag regex:      ^v(\\d+)\\.(\\d+)\\.(\\d+)$',
     ]}
   />
+  <p>
+    Si tienes países configurados para <a href="#deploys"><code>deploys</code></a>, también muestra la sección <em>Deploy environments (Bitbucket)</em> con la variable del token y los ambientes prod/qa de cada país.
+  </p>
 
   <h3>Crear un profile</h3>
   <p>Usa <code>config set</code> para crear o actualizar un profile con prefijos personalizados.</p>
@@ -227,10 +340,73 @@ const terminalCommands = [
     ]}
   />
 
+  <h3>Eliminar un profile</h3>
+  <p>No se puede borrar <code>default</code>. Si borras el profile activo, se vuelve a <code>default</code>.</p>
+  <Terminal
+    title="terminal — config delete"
+    commands={[
+      'taghound config delete example',
+      "#   ✅ Profile 'example' deleted",
+    ]}
+  />
+
   <p>La configuración se guarda en <code>~/.config/taghound/config.json</code>.</p>
 
+  <h2 id="deploys">Deployments (Bitbucket Cloud)</h2>
+  <p>
+    Que exista un branch de release nuevo no significa que esté en producción. <code>taghound deploys</code> le pregunta a Bitbucket Pipelines por el
+    <strong>último deploy exitoso</strong> de cada ambiente y ubica ese commit exacto en tu historial: a qué branch pertenece, con qué tag calza y si hay algo más nuevo esperando.
+  </p>
+
+  <Terminal
+    title="terminal — setup deploys"
+    commands={[
+      'export BITBUCKET_TOKEN=...',
+      '# listar los environments definidos en el repo',
+      'taghound deploys --envs',
+      '# {slug} → repo, {country} → código en minúscula, {COUNTRY} → mayúscula, {workspace}',
+      "taghound config country set CL --prod 'prd-{slug}-{country}' --qa 'qa-{slug}-{country}'",
+      "#   ✅ Country 'CL' saved",
+      '#      prod: prd-{slug}-{country}  qa: qa-{slug}-{country}',
+    ]}
+  />
+
+  <Terminal title="terminal — deploys" commands={deploysOutput} />
+
+  <p>
+    El código de país se guarda en mayúscula y <code>--prod</code> es obligatorio para un país nuevo. Para quitarlo: <code>taghound config country delete CL</code>.
+    Los resultados se cachean 5 minutos; <code>taghound deploys --refresh</code> se salta el caché.
+  </p>
+
+  <h3>Estados</h3>
+  <FlagsTable
+    headers={['Estado', '', 'Significado']}
+    flags={[
+      { flag: '✓ latest', description: 'El commit desplegado es el tag más nuevo de la línea de release más nueva' },
+      { flag: '● N commits not tagged', description: 'Desplegado desde un branch de release con commits después de su último tag' },
+      { flag: '⚠ … not deployed', description: 'Existe un branch de release más nuevo, o un tag más nuevo en la misma línea' },
+      { flag: '● not a release branch', description: 'Desplegado desde un feature u otro branch — normal en QA' },
+      { flag: '✗ not a release branch deployed to PROD', description: 'Lo mismo, pero en PROD (en rojo)' },
+      { flag: 'never deployed', description: 'Los pipelines llegaron al paso (manual) de deploy pero nadie lo ejecutó' },
+      { flag: '? commit not found locally', description: 'El commit desplegado no está en tu clon (branch borrado, force-push)' },
+    ]}
+  />
+  <p>
+    Los países cuyos ambientes no existen en el repo se ocultan. Los tags fuera de las líneas de release de tus branches (ej. <code>v3950.3950.1</code> creado desde un feature branch) se ignoran.
+  </p>
+
+  <h3>Autenticación y configuración</h3>
+  <p>
+    <code>BITBUCKET_TOKEN</code> es un token de repo o workspace y se envía como Bearer. <code>BITBUCKET_USERNAME</code> solo hace falta para app passwords o API tokens (usa Basic auth).
+    En <code>~/.config/taghound/config.json</code>, bajo <code>bitbucket</code>, puedes ajustar <code>auth_env</code> (default <code>BITBUCKET_TOKEN</code>), <code>username</code>,
+    <code>lookback</code> (deploys revisados por ambiente, default 200) y <code>cache_ttl_seconds</code> (default 300).
+  </p>
+  <p>
+    <code>deploys</code> solo soporta remotos <code>origin</code> en Bitbucket Cloud y consulta su API por HTTPS con <code>net/http</code>.
+  </p>
+
   <h2 id="build">Build from source</h2>
-  <p>Requiere Go instalado.</p>
+  <p>Requiere Go 1.26+ y Git.</p>
   <Terminal
     title="terminal — build"
     commands={[
@@ -239,11 +415,15 @@ const terminalCommands = [
       '# ',
       '# Build para una plataforma específica',
       'make darwin-arm64',
+      'make darwin-amd64',
       'make linux-amd64',
       'make windows-amd64',
       '# ',
       '# Correr tests',
       'make test',
+      '# ',
+      '# Instalar en /usr/local/bin',
+      'make install',
     ]}
   />
 
@@ -253,4 +433,7 @@ const terminalCommands = [
   <p>
     <strong>Zero dependencias externas.</strong> TagHound usa solo la stdlib de Go. Git se invoca via <code>os/exec</code> — sin libgit2, sin CGO.
   </p>
+
+  <h2 id="changelog">Changelog</h2>
+  <Changelog releases={releases} repo="jee4nc/taghound" />
 </Docs>
