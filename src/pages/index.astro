@@ -18,7 +18,7 @@ function formatDate(date: Date) {
     <section class="hero-section pb-25 pt-30">
       <div class="hero-tag">
         <span class="block h-px w-6 bg-cyan"></span>
-        Full Stack Engineer
+        Full Stack Engineer · AI Agents
       </div>
       <h1 class="hero-name">
         Jean Carlos
@@ -114,23 +114,50 @@ function formatDate(date: Date) {
           </div>
         </a>
 
-        <!-- PrintSII -->
-        <div class="project-card interactive">
+        <!-- Mariner -->
+        <a href="https://marinerhttp.dev" target="_blank" rel="noopener noreferrer" class="project-card interactive">
           <div class="project-meta">
             <span class="badge badge-orange">Swift</span>
-            <span class="badge badge-violet">iOS</span>
+            <span class="badge badge-violet">macOS</span>
             <span class="project-num">03</span>
           </div>
-          <div class="project-title">PrintSII</div>
+          <div class="project-title">Mariner ↗</div>
           <p class="project-desc">
-            App iOS para imprimir boletas electrónicas del SII en impresoras Epson TM-m30III via WiFi/AirPrint con detección de código de barras.
+            Cliente REST nativo para macOS, alternativa a Postman sin Electron. Abre en menos de un segundo, guarda tus requests en tu Mac y no pide login.
           </p>
           <div class="project-tags">
-            <span class="tag">PDFKit</span>
-            <span class="tag">Vision</span>
-            <span class="tag">AirPrint</span>
+            <span class="tag">SwiftUI</span>
+            <span class="tag">SwiftData</span>
+            <span class="tag">JavaScriptCore</span>
           </div>
-        </div>
+        </a>
+
+        <!-- domo IA -->
+        <a href="https://domo-ia.com" target="_blank" rel="noopener noreferrer" class="project-card featured interactive">
+          <div>
+            <div class="project-meta">
+              <span class="badge badge-cyan">IA</span>
+              <span class="badge badge-violet">SaaS</span>
+              <span class="project-num">04</span>
+            </div>
+            <div class="project-title">domo IA ↗</div>
+            <p class="project-desc">
+              Trabajadores digitales que traen leads desde tus anuncios, los atienden en menos de un minuto y agendan la reunión.
+            </p>
+            <div class="project-tags">
+              <span class="tag">AI agents</span>
+              <span class="tag">LLMs</span>
+              <span class="tag">Claude</span>
+              <span class="tag">n8n</span>
+              <span class="tag">NestJS</span>
+              <span class="tag">PostgreSQL</span>
+            </div>
+          </div>
+          <div class="project-install">
+            <div class="install-title">Mi rol · líder técnico</div>
+            <div>Lidero la arquitectura y el desarrollo de la plataforma SaaS multicliente y de la flota de agentes de IA que atiende a cada cliente: API, panel, orquestación de agentes e infraestructura.</div>
+          </div>
+        </a>
       </div>
     </section>
 
@@ -205,6 +232,15 @@ function formatDate(date: Date) {
             <span class="stack-item">Kubernetes</span>
             <span class="stack-item">Docker</span>
             <span class="stack-item">CI/CD</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <div class="stack-group-title">IA</div>
+          <div class="stack-items">
+            <span class="stack-item">AI agents</span>
+            <span class="stack-item">LLMs / Claude</span>
+            <span class="stack-item">n8n workflows</span>
+            <span class="stack-item">Prompt engineering</span>
           </div>
         </div>
         <div class="stack-group">
@@ -565,7 +601,7 @@ function formatDate(date: Date) {
   /* ── Stack grid ── */
   .stack-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
   }
   .stack-group {

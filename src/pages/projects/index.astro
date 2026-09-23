@@ -26,14 +26,27 @@ const projects = [
   },
   {
     num: '03',
-    title: 'PrintSII',
-    desc: 'App iOS para imprimir boletas electrónicas del SII en impresoras Epson TM-m30III via WiFi/AirPrint con detección de código de barras.',
+    title: 'Mariner',
+    desc: 'Cliente REST nativo para macOS, alternativa a Postman sin Electron. Abre en menos de un segundo, guarda tus requests en tu Mac y no pide login.',
     lang: 'Swift',
     langColor: 'orange',
-    type: 'iOS',
-    tags: ['PDFKit', 'Vision', 'AirPrint', 'Epson SDK'],
+    type: 'macOS',
+    tags: ['SwiftUI', 'SwiftData', 'JavaScriptCore', 'CloudKit'],
     href: null,
     repo: null,
+    site: 'https://marinerhttp.dev',
+  },
+  {
+    num: '04',
+    title: 'domo IA',
+    desc: 'Trabajadores digitales que traen leads desde tus anuncios, los atienden en menos de un minuto y agendan la reunión. Como líder técnico, lidero la arquitectura y el desarrollo de la plataforma SaaS multicliente y de la flota de agentes de IA: API, panel, orquestación de agentes e infraestructura.',
+    lang: 'IA',
+    langColor: 'cyan',
+    type: 'Líder técnico',
+    tags: ['AI agents', 'LLMs', 'Claude', 'n8n', 'NestJS', 'PostgreSQL'],
+    href: null,
+    repo: null,
+    site: 'https://domo-ia.com',
   },
 ];
 ---
@@ -57,6 +70,9 @@ const projects = [
           <div class="project-card interactive">
             {project.href && (
               <a href={project.href} class="card-overlay" aria-label={`Ver ${project.title}`}></a>
+            )}
+            {!project.href && project.site && (
+              <a href={project.site} class="card-overlay" target="_blank" rel="noopener noreferrer" aria-label={`Visitar ${project.title}`}></a>
             )}
             <div class="loading-bar"></div>
             <span class="project-num-bg">{project.num}</span>
@@ -94,7 +110,12 @@ const projects = [
                     github ↗
                   </a>
                 )}
-                {!project.href && !project.repo && (
+                {project.site && (
+                  <span class="project-link project-link-external">
+                    sitio ↗
+                  </span>
+                )}
+                {!project.href && !project.repo && !project.site && (
                   <span class="project-link project-link-muted">
                     repo privado
                   </span>
