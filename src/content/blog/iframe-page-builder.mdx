@@ -172,7 +172,7 @@ El orden importa: ambos `setState` se batchean en el mismo render de React, así
 
 ## Lo que aprendí
 
-**`transform: scale()` no afecta el layout.** Es solo visual. El iframe sigue ocupando su tamaño original en el DOM. Todo lo que envuelve al iframe necesita account for esto — el sizing del wrapper, la medición del contenedor, el manejo del overflow.
+**`transform: scale()` no afecta el layout.** Es solo visual. El iframe sigue ocupando su tamaño original en el DOM. Todo lo que envuelve al iframe tiene que tomarlo en cuenta — el sizing del wrapper, la medición del contenedor, el manejo del overflow.
 
 **Los iframes inflan todo lo que pueden.** Un iframe de 1440px dentro de un contenedor con `overflow: hidden` y `min-w-0` igual puede inflar mediciones. Cuando la medición bottom-up falla, calcular top-down (desde `window.innerWidth` hacia abajo) es más confiable.
 
